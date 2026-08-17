@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Details — GridLab Design Market</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%230a0b0d%22/><rect x=%2222%22 y=%2222%22 width=%2222%22 height=%2222%22 fill=%22%23c6ff5e%22/><rect x=%2256%22 y=%2256%22 width=%2222%22 height=%2222%22 fill=%22%23c6ff5e%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="mobile-topbar" id="mobile-topbar"></div>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main">
+    <a href="index.html" class="back-link">&larr; Back to marketplace</a>
+
+    <div class="product-detail" id="product-detail">
+      <div class="gallery">
+        <div class="gallery-main">
+          <img id="gallery-main-img" src="" alt="">
+        </div>
+        <div class="gallery-thumbs" id="gallery-thumbs"></div>
+      </div>
+
+      <div class="detail-info">
+        <span class="detail-cat-tag" id="detail-cat"></span>
+        <h1 id="detail-name"></h1>
+        <p class="detail-price" id="detail-price"></p>
+        <p class="detail-desc" id="detail-desc"></p>
+
+        <div class="detail-meta">
+          <div class="detail-meta-row"><span>Format</span><span id="detail-format"></span></div>
+          <div class="detail-meta-row"><span>License</span><span id="detail-license"></span></div>
+          <div class="detail-meta-row"><span>Delivery</span><span>Instant download link by email</span></div>
+        </div>
+
+        <div class="detail-actions">
+          <a href="#" id="buy-btn" class="btn btn-primary">Buy Now</a>
+          <a href="hire.html" class="btn">Hire Us to Customize This</a>
+          <p class="buy-note">Checkout opens an email to our team &mdash; card payments coming soon.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="related-section">
+      <h2>You might also like</h2>
+      <div class="product-grid" id="related-grid"></div>
+    </div>
+  </main>
+
+</div>
+
+<script src="site.js?v=3"></script>
+</body>
+</html>

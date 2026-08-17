@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hire Us — GridLab Design Market</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%230a0b0d%22/><rect x=%2222%22 y=%2222%22 width=%2222%22 height=%2222%22 fill=%22%23c6ff5e%22/><rect x=%2256%22 y=%2256%22 width=%2222%22 height=%2222%22 fill=%22%23c6ff5e%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="mobile-topbar" id="mobile-topbar"></div>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main" id="contact">
+    <div class="page-header">
+      <h1></h1>
+      <p></p>
+    </div>
+
+    <form class="form-card" id="hire-form">
+      <div class="form-two">
+        <div class="form-row">
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-row">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label for="company">Company (optional)</label>
+        <input type="text" id="company" name="company">
+      </div>
+
+      <div class="form-two">
+        <div class="form-row">
+          <label for="project-type">Project Type</label>
+          <select id="project-type" name="project-type" required>
+            <option value="">Select one</option>
+            <option>Web Design</option>
+            <option>Branding &amp; Identity</option>
+            <option>UI / UX Design</option>
+            <option>Custom Illustration</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="budget">Budget</label>
+          <select id="budget" name="budget" required>
+            <option value="">Select a range</option>
+            <option>Under $1,000</option>
+            <option>$1,000 &ndash; $5,000</option>
+            <option>$5,000 &ndash; $15,000</option>
+            <option>$15,000+</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label for="message">Project Details</label>
+        <textarea id="message" name="message" rows="5" required placeholder="What are you trying to build?"></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Send Request</button>
+
+      <div class="form-success" id="form-success">
+        Thanks &mdash; your request has been noted. We'll reply from hello@gridlab.co within 1&ndash;2 business days.
+      </div>
+    </form>
+  </main>
+
+</div>
+
+<script src="site.js?v=3"></script>
+</body>
+</html>

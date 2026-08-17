@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login — GridLab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="login-body">
+
+<form class="login-card" id="login-form">
+  <div class="login-logo">GridLab Admin</div>
+  <p class="login-sub">Sign in to manage your site.</p>
+  <div class="form-row">
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" autofocus required>
+  </div>
+  <button type="submit" class="btn btn-primary btn-block">Log In</button>
+  <p class="login-error" id="login-error"></p>
+</form>
+
+<script src="admin.js"></script>
+</body>
+</html>
