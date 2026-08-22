@@ -163,6 +163,7 @@ app.get(
         name: r.name,
         category: r.category,
         logo: r.logo_url,
+        cover: r.cover_url,
         description: r.description,
         link: r.link_url
       }))
@@ -414,9 +415,9 @@ app.post(
     try {
       const row = (
         await query(
-          `INSERT INTO ventures (slug, name, category, logo_url, description, link_url, sort_order)
-           VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-          [slug, b.name, b.category || "", b.logo || null, b.description || "", b.link || "", maxOrder + 1]
+          `INSERT INTO ventures (slug, name, category, logo_url, cover_url, description, link_url, sort_order)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+          [slug, b.name, b.category || "", b.logo || null, b.cover || null, b.description || "", b.link || "", maxOrder + 1]
         )
       ).rows[0];
       res.json(row);
@@ -439,14 +440,15 @@ app.put(
       name: b.name ?? current.name,
       category: b.category ?? current.category,
       logo_url: b.logo !== undefined ? b.logo : current.logo_url,
+      cover_url: b.cover !== undefined ? b.cover : current.cover_url,
       description: b.description ?? current.description,
       link_url: b.link ?? current.link_url
     };
     try {
       const row = (
         await query(
-          `UPDATE ventures SET slug=$1, name=$2, category=$3, logo_url=$4, description=$5, link_url=$6 WHERE id=$7 RETURNING *`,
-          [next.slug, next.name, next.category, next.logo_url, next.description, next.link_url, req.params.id]
+          `UPDATE ventures SET slug=$1, name=$2, category=$3, logo_url=$4, cover_url=$5, description=$6, link_url=$7 WHERE id=$8 RETURNING *`,
+          [next.slug, next.name, next.category, next.logo_url, next.cover_url, next.description, next.link_url, req.params.id]
         )
       ).rows[0];
       res.json(row);

@@ -114,14 +114,14 @@ async function seedVentures() {
     { slug: "studio-os", name: "Studio OS", category: "Operations", description: "The internal tool GridLab runs on — project tracking, invoicing, and time, built for small studios.", color: "motion" }
   ];
 
-  const insert = query;
   for (let i = 0; i < ventures.length; i++) {
     const v = ventures[i];
     const logo = placeholderThumb(v.name.charAt(0), v.color, v.slug + "-logo", 200, 200);
-    await insert(
-      `INSERT INTO ventures (slug, name, category, logo_url, description, link_url, sort_order)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [v.slug, v.name, v.category, logo, v.description, "", i]
+    const cover = placeholderThumb(v.name, v.color, v.slug + "-cover", 800, 450);
+    await query(
+      `INSERT INTO ventures (slug, name, category, logo_url, cover_url, description, link_url, sort_order)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [v.slug, v.name, v.category, logo, cover, v.description, "", i]
     );
   }
 }

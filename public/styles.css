@@ -430,30 +430,105 @@ img { max-width: 100%; display: block; }
 
 /* ---------- Ventures ---------- */
 
-.venture-grid {
+.venture-hero-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
 }
 
-.venture-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 20px;
+.venture-hero-card {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface);
+  display: block;
+}
+
+.venture-hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.venture-hero-card:hover .venture-hero-img { transform: scale(1.03); }
+
+.venture-hero-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0) 55%);
+}
+
+.venture-hero-meta {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 16px;
+  color: #fff;
+}
+
+.venture-hero-name { font-size: 16px; font-weight: 600; }
+
+.venture-hero-category {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 2px;
+}
+
+.related-section h2 { font-size: 15px; font-weight: 600; margin: 0 0 16px; }
+
+.venture-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px 16px;
+}
+
+.venture-deal-card {
+  display: block;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  overflow: hidden;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
 
-a.venture-card:hover {
+a.venture-deal-card:hover {
   border-color: rgba(0, 0, 0, 0.22);
   transform: translateY(-1px);
 }
 
+.venture-deal-img {
+  aspect-ratio: 4 / 3;
+  background: var(--surface);
+}
+
+.venture-deal-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.venture-deal-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 0;
+}
+
+.venture-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 8px 0 0;
+  padding: 0 14px 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .venture-logo {
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-sm);
   overflow: hidden;
   flex-shrink: 0;
@@ -468,7 +543,7 @@ a.venture-card:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text);
   background: var(--accent);
@@ -477,26 +552,21 @@ a.venture-card:hover {
 .venture-info { min-width: 0; }
 
 .venture-name {
-  font-size: 14.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .venture-category {
   font-size: 12px;
   color: var(--text-faint);
-  margin-top: 2px;
-}
-
-.venture-desc {
-  font-size: 13px;
-  line-height: 1.55;
-  color: var(--text-secondary);
-  margin: 8px 0 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+  margin-top: 1px;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ---------- Product detail ---------- */

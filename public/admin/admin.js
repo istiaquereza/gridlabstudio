@@ -444,6 +444,7 @@ function showVentureForm(venture) {
   var slot = document.getElementById("venture-form-slot");
   var isEdit = !!venture;
   var logoUrl = venture ? venture.logo_url : null;
+  var coverUrl = venture ? venture.cover_url : null;
 
   slot.innerHTML =
     '<div class="card">' +
@@ -457,8 +458,12 @@ function showVentureForm(venture) {
     '<div class="form-row"><label>Link URL</label><input id="vf-link" value="' + escapeHTML(venture ? venture.link_url : "") + '" placeholder="https://..."></div>' +
     "</div>" +
     '<div class="form-row"><label>Description</label><textarea id="vf-description" rows="3">' + escapeHTML(venture ? venture.description : "") + "</textarea></div>" +
-    '<div class="form-row"><label>Logo image</label><input type="file" id="vf-logo-file" accept="image/*">' +
+    '<div class="form-two">' +
+    '<div class="form-row"><label>Logo image (small icon)</label><input type="file" id="vf-logo-file" accept="image/*">' +
     '<div id="vf-logo-preview" style="margin-top:6px;"></div></div>' +
+    '<div class="form-row"><label>Cover image (hero / card image)</label><input type="file" id="vf-cover-file" accept="image/*">' +
+    '<div id="vf-cover-preview" style="margin-top:6px;"></div></div>' +
+    "</div>" +
     '<div style="display:flex;gap:8px;margin-top:8px;">' +
     '<button class="btn btn-primary" id="vf-save">' + (isEdit ? "Save Changes" : "Create Venture") + "</button>" +
     '<button class="btn" id="vf-cancel">Cancel</button>' +
@@ -469,7 +474,12 @@ function showVentureForm(venture) {
     var box = document.getElementById("vf-logo-preview");
     box.innerHTML = logoUrl ? '<img src="' + logoUrl + '" style="width:56px;height:56px;object-fit:cover;border-radius:8px;">' : "";
   }
+  function renderCoverPreview() {
+    var box = document.getElementById("vf-cover-preview");
+    box.innerHTML = coverUrl ? '<img src="' + coverUrl + '" style="width:120px;height:68px;object-fit:cover;border-radius:8px;">' : "";
+  }
   renderLogoPreview();
+  renderCoverPreview();
 
   document.getElementById("vf-logo-file").addEventListener("change", function (e) {
     var file = e.target.files[0];
@@ -484,6 +494,19 @@ function showVentureForm(venture) {
       .catch(function (err) { toast(err.message, true); });
   });
 
+  document.getElementById("vf-cover-file").addEventListener("change", function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var fd = new FormData();
+    fd.append("file", file);
+    api("/api/admin/upload/venture", { method: "POST", body: fd })
+      .then(function (res) {
+        coverUrl = res.url;
+        renderCoverPreview();
+      })
+      .catch(function (err) { toast(err.message, true); });
+  });
+
   document.getElementById("vf-cancel").addEventListener("click", function () { slot.innerHTML = ""; });
 
   document.getElementById("vf-save").addEventListener("click", function () {
@@ -493,7 +516,8 @@ function showVentureForm(venture) {
       category: document.getElementById("vf-category").value,
       link: document.getElementById("vf-link").value,
       description: document.getElementById("vf-description").value,
-      logo: logoUrl
+      logo: logoUrl,
+      cover: coverUrl
     };
     if (!body.name) return toast("Name is required.", true);
 

@@ -77,6 +77,7 @@ async function initSchema() {
       name TEXT NOT NULL,
       category TEXT NOT NULL DEFAULT '',
       logo_url TEXT,
+      cover_url TEXT,
       description TEXT NOT NULL DEFAULT '',
       link_url TEXT NOT NULL DEFAULT '',
       sort_order INTEGER NOT NULL DEFAULT 0,
@@ -100,6 +101,8 @@ async function initSchema() {
       salt TEXT NOT NULL
     );
   `);
+
+  await pool.query(`ALTER TABLE ventures ADD COLUMN IF NOT EXISTS cover_url TEXT;`);
 }
 
 module.exports = { query, pool, initSchema };

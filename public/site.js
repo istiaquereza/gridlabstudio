@@ -388,34 +388,65 @@ function initHirePage(site) {
 
 // ---------- Page: ventures.html ----------
 
-function ventureCardHTML(v) {
-  var logo = v.logo
+function ventureLogoHTML(v) {
+  return v.logo
     ? '<img src="' + v.logo + '" alt="' + v.name + '">'
     : '<div class="venture-logo-fallback">' + v.name.charAt(0) + "</div>";
+}
+
+function heroVentureCardHTML(v) {
+  var cover = v.cover || v.logo || "";
   var inner =
-    '<div class="venture-logo">' + logo + "</div>" +
+    (cover ? '<img class="venture-hero-img" src="' + cover + '" alt="' + v.name + '">' : "") +
+    '<div class="venture-hero-scrim"></div>' +
+    '<div class="venture-hero-meta">' +
+    '<div class="venture-hero-name">' + v.name + "</div>" +
+    (v.category ? '<div class="venture-hero-category">' + v.category + "</div>" : "") +
+    "</div>";
+  return v.link
+    ? '<a class="venture-hero-card" href="' + v.link + '" target="_blank" rel="noopener">' + inner + "</a>"
+    : '<div class="venture-hero-card">' + inner + "</div>";
+}
+
+function dealVentureCardHTML(v) {
+  var cover = v.cover || v.logo;
+  var inner =
+    '<div class="venture-deal-img">' +
+    (cover ? '<img src="' + cover + '" alt="' + v.name + '">' : "") +
+    "</div>" +
+    '<div class="venture-deal-info">' +
+    '<div class="venture-logo">' + ventureLogoHTML(v) + "</div>" +
     '<div class="venture-info">' +
     '<div class="venture-name">' + v.name + "</div>" +
     (v.category ? '<div class="venture-category">' + v.category + "</div>" : "") +
-    (v.description ? '<p class="venture-desc">' + v.description + "</p>" : "") +
-    "</div>";
+    "</div>" +
+    "</div>" +
+    (v.description ? '<p class="venture-desc">' + v.description + "</p>" : "");
   return v.link
-    ? '<a class="venture-card" href="' + v.link + '" target="_blank" rel="noopener">' + inner + "</a>"
-    : '<div class="venture-card">' + inner + "</div>";
+    ? '<a class="venture-deal-card" href="' + v.link + '" target="_blank" rel="noopener">' + inner + "</a>"
+    : '<div class="venture-deal-card">' + inner + "</div>";
 }
 
 function initVenturesPage(site) {
-  var grid = document.getElementById("ventures-grid");
-  if (!grid) return;
+  var heroEl = document.getElementById("ventures-hero");
+  var gridEl = document.getElementById("ventures-grid");
+  var dealsHeading = document.getElementById("ventures-deals-heading");
+  if (!heroEl || !gridEl) return;
 
   fetch("/api/ventures")
     .then(function (r) { return r.json(); })
     .then(function (ventures) {
       if (!ventures.length) {
-        grid.innerHTML = '<div class="empty-state">No ventures yet.</div>';
+        heroEl.innerHTML = '<div class="empty-state">No ventures yet.</div>';
         return;
       }
-      grid.innerHTML = ventures.map(ventureCardHTML).join("");
+      var hero = ventures.slice(0, 2);
+      var rest = ventures.slice(2);
+      heroEl.innerHTML = hero.map(heroVentureCardHTML).join("");
+      if (rest.length) {
+        if (dealsHeading) dealsHeading.style.display = "";
+        gridEl.innerHTML = rest.map(dealVentureCardHTML).join("");
+      }
     });
 }
 
