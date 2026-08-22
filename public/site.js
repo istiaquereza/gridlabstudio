@@ -1,5 +1,11 @@
 var GRIDLAB_SITE = null;
 
+function escapeHTML(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
 function fetchSite() {
   return Promise.all([
     fetch("/api/site").then(function (r) { return r.json(); }),
@@ -345,21 +351,44 @@ function initProductDetail(site) {
 
       var mainImg = document.getElementById("gallery-main-img");
       var thumbsEl = document.getElementById("gallery-thumbs");
-      var images = product.images && product.images.length ? product.images : [product.thumb];
-      mainImg.src = images[0];
-      mainImg.alt = product.name;
+      var captionEl = document.getElementById("gallery-caption");
 
-      thumbsEl.innerHTML = images
-        .map(function (src, i) {
-          return '<button data-i="' + i + '" class="' + (i === 0 ? "active" : "") + '"><img src="' + src + '" alt=""></button>';
+      var galleryItems = (product.images || []).map(function (img) {
+        return typeof img === "string" ? { url: img, keyword: "", caption: "" } : img;
+      });
+      var viewerItems = [];
+      var coverUrl = product.cover || product.thumb;
+      if (coverUrl) viewerItems.push({ url: coverUrl, keyword: product.name, caption: "" });
+      viewerItems = viewerItems.concat(galleryItems);
+
+      function showItem(i) {
+        var item = viewerItems[i];
+        if (!item) return;
+        mainImg.src = item.url;
+        mainImg.alt = item.keyword || product.name;
+        if (captionEl) {
+          captionEl.textContent = item.caption || "";
+          captionEl.style.display = item.caption ? "" : "none";
+        }
+      }
+
+      thumbsEl.innerHTML = viewerItems
+        .map(function (item, i) {
+          return (
+            '<button data-i="' + i + '" class="' + (i === 0 ? "active" : "") + '">' +
+            '<img src="' + item.url + '" alt="' + escapeHTML(item.keyword || product.name) + '">' +
+            "</button>"
+          );
         })
         .join("");
+
+      showItem(0);
 
       thumbsEl.querySelectorAll("button").forEach(function (btn) {
         btn.addEventListener("click", function () {
           thumbsEl.querySelectorAll("button").forEach(function (b) { b.classList.remove("active"); });
           btn.classList.add("active");
-          mainImg.src = images[parseInt(btn.dataset.i, 10)];
+          showItem(parseInt(btn.dataset.i, 10));
         });
       });
 

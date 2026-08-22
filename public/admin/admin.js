@@ -717,8 +717,13 @@ function renderProducts() {
 function showProductForm(product, contentTypes, categories) {
   var slot = document.getElementById("product-form-slot");
   var isEdit = !!product;
-  var galleryUrls = product ? (product.images || []).slice() : [];
+  var galleryImages = product
+    ? (product.images || []).map(function (img) {
+        return typeof img === "string" ? { url: img, keyword: "", caption: "" } : { url: img.url, keyword: img.keyword || "", caption: img.caption || "" };
+      })
+    : [];
   var thumbUrl = product ? product.thumb : null;
+  var coverUrl = product ? product.cover_url : null;
   var currentType = product ? product.content_type_slug : (contentTypes[0] && contentTypes[0].slug);
 
   var typeOptions = contentTypes
@@ -772,10 +777,14 @@ function showProductForm(product, contentTypes, categories) {
     "</div>" +
     '<div class="form-row"><label>Aspect ratio</label><select id="pf-aspect">' + aspectOptions + "</select></div>" +
     '<div class="form-row"><label>Description</label><textarea id="pf-description" rows="4">' + escapeHTML(product ? product.description : "") + "</textarea></div>" +
-    '<div class="form-row"><label>Thumbnail image</label><input type="file" id="pf-thumb-file" accept="image/*">' +
+    '<div class="form-two">' +
+    '<div class="form-row"><label>Thumbnail image</label><span class="hint">Shown on marketplace cards</span><input type="file" id="pf-thumb-file" accept="image/*">' +
     '<div id="pf-thumb-preview" style="margin-top:6px;"></div></div>' +
-    '<div class="form-row"><label>Gallery images (multiple)</label><input type="file" id="pf-gallery-file" accept="image/*" multiple>' +
-    '<div id="pf-gallery-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;"></div></div>' +
+    '<div class="form-row"><label>Cover photo</label><span class="hint">Main image on the product page</span><input type="file" id="pf-cover-file" accept="image/*">' +
+    '<div id="pf-cover-preview" style="margin-top:6px;"></div></div>' +
+    "</div>" +
+    '<div class="form-row"><label>Gallery images (multiple)</label><span class="hint">Each image can have its own keyword and caption</span><input type="file" id="pf-gallery-file" accept="image/*" multiple>' +
+    '<div id="pf-gallery-preview" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;"></div></div>' +
     '<div style="display:flex;gap:8px;margin-top:8px;">' +
     '<button class="btn btn-primary" id="pf-save">' + (isEdit ? "Save Changes" : "Create Product") + "</button>" +
     '<button class="btn" id="pf-cancel">Cancel</button>' +
@@ -786,26 +795,41 @@ function showProductForm(product, contentTypes, categories) {
     var box = document.getElementById("pf-thumb-preview");
     box.innerHTML = thumbUrl ? '<img src="' + thumbUrl + '" style="width:64px;height:64px;object-fit:cover;border-radius:8px;">' : "";
   }
+  function renderCoverPreview() {
+    var box = document.getElementById("pf-cover-preview");
+    box.innerHTML = coverUrl ? '<img src="' + coverUrl + '" style="width:112px;height:64px;object-fit:cover;border-radius:8px;">' : "";
+  }
   function renderGalleryPreview() {
     var box = document.getElementById("pf-gallery-preview");
-    box.innerHTML = galleryUrls
-      .map(function (url, i) {
+    box.innerHTML = galleryImages
+      .map(function (img, i) {
         return (
-          '<div style="position:relative;">' +
-          '<img src="' + url + '" style="width:56px;height:56px;object-fit:cover;border-radius:8px;display:block;">' +
-          '<button type="button" data-i="' + i + '" style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:1px solid var(--border);background:#fff;font-size:11px;line-height:1;cursor:pointer;">&times;</button>' +
+          '<div style="display:flex;gap:10px;align-items:flex-start;border:1px solid var(--border);border-radius:10px;padding:8px;">' +
+          '<img src="' + img.url + '" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;">' +
+          '<div style="flex:1;display:flex;gap:8px;">' +
+          '<input type="text" data-i="' + i + '" data-field="keyword" placeholder="Keyword" value="' + escapeHTML(img.keyword) + '" style="flex:1;">' +
+          '<input type="text" data-i="' + i + '" data-field="caption" placeholder="Caption" value="' + escapeHTML(img.caption) + '" style="flex:1;">' +
+          "</div>" +
+          '<button type="button" data-i="' + i + '" class="btn btn-sm btn-danger" style="flex-shrink:0;">Remove</button>' +
           "</div>"
         );
       })
       .join("");
+    box.querySelectorAll("input").forEach(function (input) {
+      input.addEventListener("input", function () {
+        var i = parseInt(input.dataset.i, 10);
+        galleryImages[i][input.dataset.field] = input.value;
+      });
+    });
     box.querySelectorAll("button").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        galleryUrls.splice(parseInt(btn.dataset.i, 10), 1);
+        galleryImages.splice(parseInt(btn.dataset.i, 10), 1);
         renderGalleryPreview();
       });
     });
   }
   renderThumbPreview();
+  renderCoverPreview();
   renderGalleryPreview();
 
   document.getElementById("pf-type").addEventListener("change", function (e) {
@@ -847,6 +871,19 @@ function showProductForm(product, contentTypes, categories) {
       .catch(function (err) { toast(err.message, true); });
   });
 
+  document.getElementById("pf-cover-file").addEventListener("change", function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var fd = new FormData();
+    fd.append("file", file);
+    api("/api/admin/upload/product", { method: "POST", body: fd })
+      .then(function (res) {
+        coverUrl = res.url;
+        renderCoverPreview();
+      })
+      .catch(function (err) { toast(err.message, true); });
+  });
+
   document.getElementById("pf-gallery-file").addEventListener("change", function (e) {
     var files = Array.from(e.target.files || []);
     var chain = Promise.resolve();
@@ -858,7 +895,7 @@ function showProductForm(product, contentTypes, categories) {
           return api("/api/admin/upload/product", { method: "POST", body: fd });
         })
         .then(function (res) {
-          galleryUrls.push(res.url);
+          galleryImages.push({ url: res.url, keyword: "", caption: "" });
           renderGalleryPreview();
         });
     });
@@ -878,8 +915,9 @@ function showProductForm(product, contentTypes, categories) {
       license: document.getElementById("pf-license").value,
       aspect: document.getElementById("pf-aspect").value,
       description: document.getElementById("pf-description").value,
-      thumb: thumbUrl || (galleryUrls[0] || null),
-      images: galleryUrls
+      thumb: thumbUrl || (galleryImages[0] && galleryImages[0].url) || null,
+      cover: coverUrl || thumbUrl || null,
+      images: galleryImages
     };
     if (!body.name) return toast("Name is required.", true);
     if (!body.type) return toast("Choose a content type.", true);

@@ -86,15 +86,16 @@ async function seedProducts() {
     const w = 600;
     const h = Math.round(w / ratio);
     const thumb = placeholderThumb(p.name, p.category, p.slug + "-0", w, h);
+    const cover = placeholderThumb(p.name, p.category, p.slug + "-cover", 1200, 800);
     const images = JSON.stringify([
-      placeholderThumb(p.name, p.category, p.slug + "-1"),
-      placeholderThumb(p.name + " — detail", p.category, p.slug + "-2"),
-      placeholderThumb(p.name + " — usage", p.category, p.slug + "-3")
+      { url: placeholderThumb(p.name, p.category, p.slug + "-1"), keyword: p.name, caption: "Overview" },
+      { url: placeholderThumb(p.name + " — detail", p.category, p.slug + "-2"), keyword: p.name + " detail", caption: "Detail view" },
+      { url: placeholderThumb(p.name + " — usage", p.category, p.slug + "-3"), keyword: p.name + " usage", caption: "In use" }
     ]);
     await query(
-      `INSERT INTO products (slug, name, content_type_slug, price, aspect, thumb, images, description, formats, license, sort_order)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-      [p.slug, p.name, p.category, p.price, p.aspect, thumb, images, p.description, p.formats, p.license, i]
+      `INSERT INTO products (slug, name, content_type_slug, price, aspect, thumb, cover_url, images, description, formats, license, sort_order)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+      [p.slug, p.name, p.category, p.price, p.aspect, thumb, cover, images, p.description, p.formats, p.license, i]
     );
   }
 }

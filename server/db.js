@@ -81,6 +81,7 @@ async function initSchema() {
       price REAL NOT NULL DEFAULT 0,
       aspect TEXT NOT NULL DEFAULT '4 / 3',
       thumb TEXT,
+      cover_url TEXT,
       images TEXT NOT NULL DEFAULT '[]',
       description TEXT NOT NULL DEFAULT '',
       formats TEXT NOT NULL DEFAULT '',
@@ -131,7 +132,25 @@ async function initSchema() {
   `);
 
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS category_slug TEXT;`);
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS cover_url TEXT;`);
   await pool.query(`ALTER TABLE ventures ADD COLUMN IF NOT EXISTS cover_url TEXT;`);
+
+  // One-time: gallery images used to be a flat array of URL strings.
+  // Upgrade each entry to {url, keyword, caption} so every image can carry
+  // its own metadata. Safe to re-run — rows already in the new shape are skipped.
+  const productRows = (await pool.query(`SELECT id, images FROM products`)).rows;
+  for (const row of productRows) {
+    let images;
+    try {
+      images = JSON.parse(row.images || "[]");
+    } catch (e) {
+      images = [];
+    }
+    if (images.length && typeof images[0] === "string") {
+      const upgraded = images.map((url) => ({ url, keyword: "", caption: "" }));
+      await pool.query(`UPDATE products SET images = $1 WHERE id = $2`, [JSON.stringify(upgraded), row.id]);
+    }
+  }
 }
 
 module.exports = { query, pool, initSchema };
