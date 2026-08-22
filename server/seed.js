@@ -1,36 +1,35 @@
 const crypto = require("crypto");
-const fs = require("fs");
-const path = require("path");
-const db = require("./db");
+const { query, initSchema } = require("./db");
 const { setAdminPassword, hasAdminPassword } = require("./auth");
 const { placeholderThumb } = require("./placeholder");
 
-function seedSettings() {
-  const existing = db.prepare("SELECT id FROM settings WHERE id = 1").get();
-  if (existing) return;
-  db.prepare(
+async function seedSettings() {
+  const { rows } = await query("SELECT id FROM settings WHERE id = 1");
+  if (rows.length) return;
+  await query(
     `INSERT INTO settings (
       id, site_name, logo_url, content_title, content_description,
       footer_quote, footer_note, copyright_name, partner_label, partner_url,
       hire_title, hire_description
-    ) VALUES (1, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    "GridLab",
-    "Design Marketplace",
-    "Ready-made design assets from the GridLab studio — or hire us to build yours from scratch.",
-    "A daily curation of exceptional design, websites and tools.",
-    "Join 120+ brands who've shipped design with GridLab.",
-    "GridLab",
-    "Partner with us",
-    "hire.html#partner",
-    "Hire the GridLab Studio",
-    "Need something custom? Tell us about your project and we'll get back to you within 1–2 business days with next steps."
+    ) VALUES (1, $1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    [
+      "GridLab",
+      "Design Marketplace",
+      "Ready-made design assets from the GridLab studio — or hire us to build yours from scratch.",
+      "A daily curation of exceptional design, websites and tools.",
+      "Join 120+ brands who've shipped design with GridLab.",
+      "GridLab",
+      "Partner with us",
+      "hire.html#partner",
+      "Hire the GridLab Studio",
+      "Need something custom? Tell us about your project and we'll get back to you within 1–2 business days with next steps."
+    ]
   );
 }
 
-function seedCategories() {
-  const count = db.prepare("SELECT COUNT(*) AS n FROM categories").get().n;
-  if (count > 0) return;
+async function seedCategories() {
+  const { rows } = await query("SELECT COUNT(*)::int AS n FROM categories");
+  if (rows[0].n > 0) return;
   const categories = [
     ["web", "Web Design"],
     ["branding", "Branding"],
@@ -42,13 +41,15 @@ function seedCategories() {
     ["print", "Print"],
     ["motion", "Motion"]
   ];
-  const insert = db.prepare("INSERT INTO categories (slug, name, sort_order) VALUES (?, ?, ?)");
-  categories.forEach(([slug, name], i) => insert.run(slug, name, i));
+  for (let i = 0; i < categories.length; i++) {
+    const [slug, name] = categories[i];
+    await query("INSERT INTO categories (slug, name, sort_order) VALUES ($1, $2, $3)", [slug, name, i]);
+  }
 }
 
-function seedPages() {
-  const count = db.prepare("SELECT COUNT(*) AS n FROM pages").get().n;
-  if (count > 0) return;
+async function seedPages() {
+  const { rows } = await query("SELECT COUNT(*)::int AS n FROM pages");
+  if (rows[0].n > 0) return;
   const body = [
     "GridLab is an independent design studio and marketplace. We sell ready-made design assets for teams who need to move fast, and we take on custom studio work for teams who need something built from scratch.",
     "(01) — Craft: Every asset in the marketplace is built and reviewed by our studio team before it ships, not resold from a stock library.",
@@ -56,17 +57,12 @@ function seedPages() {
     "(03) — Honesty: Clear pricing, clear licensing, and no bait-and-switch between what a listing shows and what you receive.",
     "(04) — Impact: Whether it's a $19 icon set or a full brand engagement, we measure the work by whether it makes your product better."
   ].join("\n\n");
-  db.prepare("INSERT INTO pages (slug, title, body, sort_order) VALUES (?, ?, ?, ?)").run(
-    "about",
-    "About",
-    body,
-    0
-  );
+  await query("INSERT INTO pages (slug, title, body, sort_order) VALUES ($1, $2, $3, $4)", ["about", "About", body, 0]);
 }
 
-function seedProducts() {
-  const count = db.prepare("SELECT COUNT(*) AS n FROM products").get().n;
-  if (count > 0) return;
+async function seedProducts() {
+  const { rows } = await query("SELECT COUNT(*)::int AS n FROM products");
+  if (rows[0].n > 0) return;
 
   const products = [
     { slug: "aurora-landing-kit", name: "Aurora Landing Kit", category: "web", aspect: "4 / 3", price: 49, formats: "Figma, HTML/CSS", license: "Standard License", description: "Aurora is a modular landing page kit built for fast-moving product and marketing teams. It ships with 8 fully responsive sections, light and dark variants, and a token-based style system so you can restyle the whole kit by changing a handful of variables. Every component uses auto-layout and is organized for quick handoff to engineering." },
@@ -83,12 +79,8 @@ function seedProducts() {
     { slug: "harborlight-logo-suite", name: "Harborlight Logo Suite", category: "branding", aspect: "1 / 1", price: 99, formats: "AI, SVG, PNG", license: "Standard License", description: "5 distinct logo concepts, each delivered with horizontal, stacked, icon-only, and monochrome variations. Useful as a starting point for founders who need options before committing to a full identity engagement." }
   ];
 
-  const insert = db.prepare(
-    `INSERT INTO products (slug, name, category_slug, price, aspect, thumb, images, description, formats, license, sort_order)
-     VALUES (@slug, @name, @category, @price, @aspect, @thumb, @images, @description, @formats, @license, @sort_order)`
-  );
-
-  products.forEach((p, i) => {
+  for (let i = 0; i < products.length; i++) {
+    const p = products[i];
     const parts = p.aspect.split("/").map((n) => parseFloat(n));
     const ratio = parts[0] / parts[1];
     const w = 600;
@@ -99,48 +91,32 @@ function seedProducts() {
       placeholderThumb(p.name + " — detail", p.category, p.slug + "-2"),
       placeholderThumb(p.name + " — usage", p.category, p.slug + "-3")
     ]);
-    insert.run({
-      slug: p.slug,
-      name: p.name,
-      category: p.category,
-      price: p.price,
-      aspect: p.aspect,
-      thumb,
-      images,
-      description: p.description,
-      formats: p.formats,
-      license: p.license,
-      sort_order: i
-    });
-  });
+    await query(
+      `INSERT INTO products (slug, name, category_slug, price, aspect, thumb, images, description, formats, license, sort_order)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [p.slug, p.name, p.category, p.price, p.aspect, thumb, images, p.description, p.formats, p.license, i]
+    );
+  }
 }
 
-function seedAdminPassword() {
-  if (hasAdminPassword()) return null;
+async function seedAdminPassword() {
+  if (await hasAdminPassword()) return null;
   const password = crypto.randomBytes(9).toString("base64url");
-  setAdminPassword(password);
-  const dataDir = process.env.DATA_DIR || path.join(__dirname, "..");
-  const file = path.join(dataDir, "ADMIN_PASSWORD.txt");
-  fs.writeFileSync(
-    file,
-    "GridLab admin panel login\n" +
-      "Password: " + password + "\n\n" +
-      "This file is generated once on first run. Change your password from inside the admin panel,\n" +
-      "and delete this file once you've saved the new password somewhere safe.\n"
-  );
+  await setAdminPassword(password);
   return password;
 }
 
-function seed() {
-  seedSettings();
-  seedCategories();
-  seedPages();
-  seedProducts();
-  const newPassword = seedAdminPassword();
+async function seed() {
+  await initSchema();
+  await seedSettings();
+  await seedCategories();
+  await seedPages();
+  await seedProducts();
+  const newPassword = await seedAdminPassword();
   if (newPassword) {
     console.log("\n==============================================");
     console.log("Admin password generated: " + newPassword);
-    console.log("Saved to ADMIN_PASSWORD.txt — log in at /admin/");
+    console.log("Save this now — it will not be shown again. Change it from the admin panel's Account tab.");
     console.log("==============================================\n");
   }
 }
@@ -148,6 +124,13 @@ function seed() {
 module.exports = seed;
 
 if (require.main === module) {
-  seed();
-  console.log("Seed complete.");
+  seed()
+    .then(() => {
+      console.log("Seed complete.");
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error("Seed failed:", err);
+      process.exit(1);
+    });
 }
