@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: gridlab-agency
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server/app.js
+    envVars:
+      - key: DATA_DIR
+        value: /data
+      - key: SESSION_SECRET
+        generateValue: true
+    disk:
+      name: gridlab-data
+      mountPath: /data
+      sizeGB: 1

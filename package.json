@@ -4,6 +4,9 @@
   "private": true,
   "description": "GridLab Design Market — marketplace site with an admin-managed backend",
   "main": "server/app.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node server/app.js",
     "seed": "node server/seed.js"

@@ -12,7 +12,8 @@ const { verifyAdminPassword, setAdminPassword, requireAuth } = require("./auth")
 seed();
 
 const ROOT = path.join(__dirname, "..");
-const UPLOADS_DIR = path.join(ROOT, "uploads");
+const DATA_DIR = process.env.DATA_DIR || ROOT;
+const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 const PORT = process.env.PORT || 8934;
 
 const app = express();

@@ -119,11 +119,11 @@ function seedAdminPassword() {
   if (hasAdminPassword()) return null;
   const password = crypto.randomBytes(9).toString("base64url");
   setAdminPassword(password);
-  const file = path.join(__dirname, "..", "ADMIN_PASSWORD.txt");
+  const dataDir = process.env.DATA_DIR || path.join(__dirname, "..");
+  const file = path.join(dataDir, "ADMIN_PASSWORD.txt");
   fs.writeFileSync(
     file,
     "GridLab admin panel login\n" +
-      "URL: http://localhost:8934/admin/\n" +
       "Password: " + password + "\n\n" +
       "This file is generated once on first run. Change your password from inside the admin panel,\n" +
       "and delete this file once you've saved the new password somewhere safe.\n"
