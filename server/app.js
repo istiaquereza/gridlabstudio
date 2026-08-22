@@ -74,6 +74,17 @@ app.post(
   })
 );
 
+app.post(
+  "/api/admin/upload/venture",
+  requireAuth,
+  upload.single("file"),
+  asyncRoute(async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded, or unsupported file type." });
+    const url = await uploadFile("ventures", req.file);
+    res.json({ url });
+  })
+);
+
 // ---------- Auth ----------
 
 app.post(
@@ -139,6 +150,23 @@ app.get(
     const page = (await query("SELECT slug, title, body FROM pages WHERE slug = $1", [req.params.slug])).rows[0];
     if (!page) return res.status(404).json({ error: "Page not found." });
     res.json(page);
+  })
+);
+
+app.get(
+  "/api/ventures",
+  asyncRoute(async (req, res) => {
+    const rows = (await query("SELECT * FROM ventures ORDER BY sort_order, id")).rows;
+    res.json(
+      rows.map((r) => ({
+        slug: r.slug,
+        name: r.name,
+        category: r.category,
+        logo: r.logo_url,
+        description: r.description,
+        link: r.link_url
+      }))
+    );
   })
 );
 
@@ -363,6 +391,77 @@ app.delete(
   requireAuth,
   asyncRoute(async (req, res) => {
     await query("DELETE FROM pages WHERE id = $1", [req.params.id]);
+    res.json({ ok: true });
+  })
+);
+
+app.get(
+  "/api/admin/ventures",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    res.json((await query("SELECT * FROM ventures ORDER BY sort_order, id")).rows);
+  })
+);
+
+app.post(
+  "/api/admin/ventures",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const b = req.body || {};
+    if (!b.name) return res.status(400).json({ error: "Name is required." });
+    const slug = b.slug ? slugify(b.slug) : slugify(b.name);
+    const maxOrder = (await query("SELECT COALESCE(MAX(sort_order), -1) AS m FROM ventures")).rows[0].m;
+    try {
+      const row = (
+        await query(
+          `INSERT INTO ventures (slug, name, category, logo_url, description, link_url, sort_order)
+           VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+          [slug, b.name, b.category || "", b.logo || null, b.description || "", b.link || "", maxOrder + 1]
+        )
+      ).rows[0];
+      res.json(row);
+    } catch (e) {
+      if (e.code === "23505") return res.status(400).json({ error: "That slug is already in use." });
+      throw e;
+    }
+  })
+);
+
+app.put(
+  "/api/admin/ventures/:id",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const current = (await query("SELECT * FROM ventures WHERE id = $1", [req.params.id])).rows[0];
+    if (!current) return res.status(404).json({ error: "Not found." });
+    const b = req.body || {};
+    const next = {
+      slug: b.slug ? slugify(b.slug) : current.slug,
+      name: b.name ?? current.name,
+      category: b.category ?? current.category,
+      logo_url: b.logo !== undefined ? b.logo : current.logo_url,
+      description: b.description ?? current.description,
+      link_url: b.link ?? current.link_url
+    };
+    try {
+      const row = (
+        await query(
+          `UPDATE ventures SET slug=$1, name=$2, category=$3, logo_url=$4, description=$5, link_url=$6 WHERE id=$7 RETURNING *`,
+          [next.slug, next.name, next.category, next.logo_url, next.description, next.link_url, req.params.id]
+        )
+      ).rows[0];
+      res.json(row);
+    } catch (e) {
+      if (e.code === "23505") return res.status(400).json({ error: "That slug is already in use." });
+      throw e;
+    }
+  })
+);
+
+app.delete(
+  "/api/admin/ventures/:id",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    await query("DELETE FROM ventures WHERE id = $1", [req.params.id]);
     res.json({ ok: true });
   })
 );

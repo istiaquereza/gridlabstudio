@@ -428,6 +428,77 @@ img { max-width: 100%; display: block; }
   font-size: 14px;
 }
 
+/* ---------- Ventures ---------- */
+
+.venture-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.venture-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+a.venture-card:hover {
+  border-color: rgba(0, 0, 0, 0.22);
+  transform: translateY(-1px);
+}
+
+.venture-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+.venture-logo img { width: 100%; height: 100%; object-fit: cover; }
+
+.venture-logo-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--accent);
+}
+
+.venture-info { min-width: 0; }
+
+.venture-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.venture-category {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+.venture-desc {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 8px 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* ---------- Product detail ---------- */
 
 .back-link {

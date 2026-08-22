@@ -52,7 +52,10 @@ function studioNavHTML(pages) {
   var slug = params.get("slug");
 
   var hireActive = path === "hire.html";
-  var html = '<a href="hire.html" class="nav-link' + (hireActive ? " active" : "") + '">Hire Us</a>';
+  var venturesActive = path === "ventures.html";
+  var html =
+    '<a href="hire.html" class="nav-link' + (hireActive ? " active" : "") + '">Hire Us</a>' +
+    '<a href="ventures.html" class="nav-link' + (venturesActive ? " active" : "") + '">Ventures</a>';
 
   html += pages
     .map(function (p) {
@@ -383,6 +386,39 @@ function initHirePage(site) {
   });
 }
 
+// ---------- Page: ventures.html ----------
+
+function ventureCardHTML(v) {
+  var logo = v.logo
+    ? '<img src="' + v.logo + '" alt="' + v.name + '">'
+    : '<div class="venture-logo-fallback">' + v.name.charAt(0) + "</div>";
+  var inner =
+    '<div class="venture-logo">' + logo + "</div>" +
+    '<div class="venture-info">' +
+    '<div class="venture-name">' + v.name + "</div>" +
+    (v.category ? '<div class="venture-category">' + v.category + "</div>" : "") +
+    (v.description ? '<p class="venture-desc">' + v.description + "</p>" : "") +
+    "</div>";
+  return v.link
+    ? '<a class="venture-card" href="' + v.link + '" target="_blank" rel="noopener">' + inner + "</a>"
+    : '<div class="venture-card">' + inner + "</div>";
+}
+
+function initVenturesPage(site) {
+  var grid = document.getElementById("ventures-grid");
+  if (!grid) return;
+
+  fetch("/api/ventures")
+    .then(function (r) { return r.json(); })
+    .then(function (ventures) {
+      if (!ventures.length) {
+        grid.innerHTML = '<div class="empty-state">No ventures yet.</div>';
+        return;
+      }
+      grid.innerHTML = ventures.map(ventureCardHTML).join("");
+    });
+}
+
 // ---------- Boot ----------
 
 fetchSite().then(function (site) {
@@ -391,5 +427,6 @@ fetchSite().then(function (site) {
   initHomeGrid(site);
   initProductDetail(site);
   initGenericPage(site);
+  initVenturesPage(site);
   initHirePage(site);
 });

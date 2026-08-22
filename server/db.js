@@ -71,6 +71,18 @@ async function initSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
 
+    CREATE TABLE IF NOT EXISTS ventures (
+      id SERIAL PRIMARY KEY,
+      slug TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT '',
+      logo_url TEXT,
+      description TEXT NOT NULL DEFAULT '',
+      link_url TEXT NOT NULL DEFAULT '',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
     CREATE TABLE IF NOT EXISTS hire_requests (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,

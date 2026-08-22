@@ -76,11 +76,12 @@ function toast(message, isError) {
     });
 
   function boot() {
-    var tabs = ["settings", "categories", "pages", "products", "hire-requests", "account"];
+    var tabs = ["settings", "categories", "pages", "ventures", "products", "hire-requests", "account"];
     var renderers = {
       settings: renderSettings,
       categories: renderCategories,
       pages: renderPages,
+      ventures: renderVentures,
       products: renderProducts,
       "hire-requests": renderHireRequests,
       account: renderAccount
@@ -384,6 +385,131 @@ function renderPages() {
       tbody.appendChild(row);
     });
   });
+}
+
+// ================= Ventures panel =================
+
+function renderVentures() {
+  var el = document.getElementById("panel-ventures");
+  el.innerHTML = '<h1>Ventures</h1><p class="panel-sub">Loading…</p>';
+
+  api("/api/admin/ventures").then(function (ventures) {
+    el.innerHTML =
+      '<div class="section-head"><div>' +
+      "<h1>Ventures</h1>" +
+      '<p class="panel-sub" style="margin-bottom:0;">Shown on the public Ventures page under Studio.</p>' +
+      "</div><button class=\"btn btn-primary\" id=\"add-venture-btn\">Add Venture</button></div>" +
+      '<div id="venture-form-slot"></div>' +
+      '<div class="card"><table><thead><tr><th></th><th>Name</th><th>Category</th><th></th></tr></thead><tbody id="ventures-tbody"></tbody></table></div>';
+
+    document.getElementById("add-venture-btn").addEventListener("click", function () {
+      showVentureForm(null);
+    });
+
+    var tbody = document.getElementById("ventures-tbody");
+    if (!ventures.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-row">No ventures yet.</td></tr>';
+      return;
+    }
+
+    ventures.forEach(function (v) {
+      var row = document.createElement("tr");
+      row.innerHTML =
+        '<td class="thumb-cell">' + (v.logo_url ? '<img src="' + v.logo_url + '" alt="">' : "") + "</td>" +
+        "<td>" + escapeHTML(v.name) + "</td>" +
+        "<td>" + escapeHTML(v.category) + "</td>" +
+        '<td><div class="row-actions">' +
+        '<button class="btn btn-sm" data-action="edit">Edit</button>' +
+        '<button class="btn btn-sm btn-danger" data-action="delete">Delete</button>' +
+        "</div></td>";
+
+      row.querySelector('[data-action="delete"]').addEventListener("click", function () {
+        if (!confirm('Delete "' + v.name + '"?')) return;
+        api("/api/admin/ventures/" + v.id, { method: "DELETE" }).then(function () {
+          toast("Venture deleted.");
+          renderVentures();
+        });
+      });
+
+      row.querySelector('[data-action="edit"]').addEventListener("click", function () {
+        showVentureForm(v);
+      });
+
+      tbody.appendChild(row);
+    });
+  });
+}
+
+function showVentureForm(venture) {
+  var slot = document.getElementById("venture-form-slot");
+  var isEdit = !!venture;
+  var logoUrl = venture ? venture.logo_url : null;
+
+  slot.innerHTML =
+    '<div class="card">' +
+    "<h2>" + (isEdit ? "Edit venture" : "New venture") + "</h2>" +
+    '<div class="form-two">' +
+    '<div class="form-row"><label>Name</label><input id="vf-name" value="' + escapeHTML(venture ? venture.name : "") + '"></div>' +
+    '<div class="form-row"><label>Slug</label><input id="vf-slug" value="' + escapeHTML(venture ? venture.slug : "") + '" placeholder="auto from name"></div>' +
+    "</div>" +
+    '<div class="form-two">' +
+    '<div class="form-row"><label>Category</label><input id="vf-category" value="' + escapeHTML(venture ? venture.category : "") + '" placeholder="e.g. Website & App Builder"></div>' +
+    '<div class="form-row"><label>Link URL</label><input id="vf-link" value="' + escapeHTML(venture ? venture.link_url : "") + '" placeholder="https://..."></div>' +
+    "</div>" +
+    '<div class="form-row"><label>Description</label><textarea id="vf-description" rows="3">' + escapeHTML(venture ? venture.description : "") + "</textarea></div>" +
+    '<div class="form-row"><label>Logo image</label><input type="file" id="vf-logo-file" accept="image/*">' +
+    '<div id="vf-logo-preview" style="margin-top:6px;"></div></div>' +
+    '<div style="display:flex;gap:8px;margin-top:8px;">' +
+    '<button class="btn btn-primary" id="vf-save">' + (isEdit ? "Save Changes" : "Create Venture") + "</button>" +
+    '<button class="btn" id="vf-cancel">Cancel</button>' +
+    "</div>" +
+    "</div>";
+
+  function renderLogoPreview() {
+    var box = document.getElementById("vf-logo-preview");
+    box.innerHTML = logoUrl ? '<img src="' + logoUrl + '" style="width:56px;height:56px;object-fit:cover;border-radius:8px;">' : "";
+  }
+  renderLogoPreview();
+
+  document.getElementById("vf-logo-file").addEventListener("change", function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var fd = new FormData();
+    fd.append("file", file);
+    api("/api/admin/upload/venture", { method: "POST", body: fd })
+      .then(function (res) {
+        logoUrl = res.url;
+        renderLogoPreview();
+      })
+      .catch(function (err) { toast(err.message, true); });
+  });
+
+  document.getElementById("vf-cancel").addEventListener("click", function () { slot.innerHTML = ""; });
+
+  document.getElementById("vf-save").addEventListener("click", function () {
+    var body = {
+      name: document.getElementById("vf-name").value,
+      slug: document.getElementById("vf-slug").value || undefined,
+      category: document.getElementById("vf-category").value,
+      link: document.getElementById("vf-link").value,
+      description: document.getElementById("vf-description").value,
+      logo: logoUrl
+    };
+    if (!body.name) return toast("Name is required.", true);
+
+    var request = isEdit
+      ? api("/api/admin/ventures/" + venture.id, { method: "PUT", body: body })
+      : api("/api/admin/ventures", { method: "POST", body: body });
+
+    request
+      .then(function () {
+        toast(isEdit ? "Venture updated." : "Venture created.");
+        renderVentures();
+      })
+      .catch(function (err) { toast(err.message, true); });
+  });
+
+  slot.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // ================= Products panel =================
