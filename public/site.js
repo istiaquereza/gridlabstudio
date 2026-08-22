@@ -1,7 +1,14 @@
 var GRIDLAB_SITE = null;
 
 function fetchSite() {
-  return fetch("/api/site").then(function (r) { return r.json(); });
+  return Promise.all([
+    fetch("/api/site").then(function (r) { return r.json(); }),
+    fetch("/api/categories").then(function (r) { return r.json(); })
+  ]).then(function (results) {
+    var site = results[0];
+    site.categories = results[1];
+    return site;
+  });
 }
 
 function defaultLogoSVG() {
@@ -28,17 +35,17 @@ function currentPath() {
   return window.location.pathname.split("/").pop() || "index.html";
 }
 
-function browseNavHTML(categories) {
+function browseNavHTML(contentTypes) {
   var params = new URLSearchParams(window.location.search);
-  var activeCat = params.get("category") || (currentPath() === "index.html" ? "all" : null);
+  var activeType = params.get("type") || (currentPath() === "index.html" ? "all" : null);
   var path = currentPath();
 
-  var items = [{ slug: "all", name: "All Design" }].concat(categories);
+  var items = [{ slug: "all", name: "All Design" }].concat(contentTypes);
   return items
     .map(function (c) {
-      var isActive = path === "index.html" && activeCat === c.slug;
+      var isActive = path === "index.html" && activeType === c.slug;
       return (
-        '<a href="index.html?category=' + c.slug + '" class="nav-link' + (isActive ? " active" : "") + '" data-cat="' + c.slug + '">' +
+        '<a href="index.html?type=' + c.slug + '" class="nav-link' + (isActive ? " active" : "") + '" data-type="' + c.slug + '">' +
         c.name +
         "</a>"
       );
@@ -100,7 +107,7 @@ function renderShell(site) {
       '<button class="btn" data-login>Log in</button>' +
       "</div>" +
       '<nav class="sidebar-nav">' +
-      '<div class="nav-group"><h4>Browse</h4>' + browseNavHTML(site.categories) + "</div>" +
+      '<div class="nav-group"><h4>Browse</h4>' + browseNavHTML(site.contentTypes) + "</div>" +
       '<div class="nav-group"><h4>Studio</h4>' + studioNavHTML(site.pages) + "</div>" +
       "</nav>" +
       '<div class="sidebar-footer">' +
@@ -165,9 +172,19 @@ function formatPrice(n) {
   return "$" + n;
 }
 
-function categoryLabel(site, slug) {
-  var found = site.categories.find(function (c) { return c.slug === slug; });
+function typeLabel(site, slug) {
+  var found = site.contentTypes.find(function (c) { return c.slug === slug; });
   return found ? found.name : slug;
+}
+
+function categoryName(site, slug) {
+  if (!slug) return null;
+  var found = site.categories.find(function (c) { return c.slug === slug; });
+  return found ? found.name : null;
+}
+
+function productClassifierLabel(site, p) {
+  return categoryName(site, p.category) || typeLabel(site, p.type);
 }
 
 function productCardHTML(site, p) {
@@ -179,7 +196,7 @@ function productCardHTML(site, p) {
     "</div>" +
     '<div class="product-info"><div>' +
     '<div class="product-name">' + p.name + "</div>" +
-    '<div class="product-cat">' + categoryLabel(site, p.category) + "</div>" +
+    '<div class="product-cat">' + productClassifierLabel(site, p) + "</div>" +
     "</div></div>" +
     "</a>"
   );
@@ -207,15 +224,55 @@ function initHomeGrid(site) {
   if (descEl) descEl.textContent = site.settings.content_description;
 
   var pillRow = document.getElementById("pill-row");
+  var subPillRow = document.getElementById("subpill-row");
   var params = new URLSearchParams(window.location.search);
-  var activeCat = params.get("category") || "all";
+  var activeType = params.get("type") || "all";
+  var activeCategory = params.get("cat") || "all";
+
+  function renderSubPills() {
+    if (!subPillRow) return;
+    if (activeType === "all") {
+      subPillRow.innerHTML = "";
+      subPillRow.style.display = "none";
+      return;
+    }
+    var categories = site.categories.filter(function (c) { return c.content_type_slug === activeType; });
+    if (!categories.length) {
+      subPillRow.innerHTML = "";
+      subPillRow.style.display = "none";
+      return;
+    }
+    subPillRow.style.display = "";
+    var subPills = [{ slug: "all", name: "All " + typeLabel(site, activeType) }].concat(categories);
+    subPillRow.innerHTML = subPills
+      .map(function (c) {
+        return (
+          '<button class="pill pill-sm' + (c.slug === activeCategory ? " active" : "") + '" data-cat="' + c.slug + '">' +
+          c.name +
+          "</button>"
+        );
+      })
+      .join("");
+    subPillRow.querySelectorAll(".pill").forEach(function (pill) {
+      pill.addEventListener("click", function () {
+        subPillRow.querySelectorAll(".pill").forEach(function (p) { p.classList.remove("active"); });
+        pill.classList.add("active");
+        activeCategory = pill.dataset.cat;
+        var url = new URL(window.location.href);
+        if (activeCategory === "all") url.searchParams.delete("cat");
+        else url.searchParams.set("cat", activeCategory);
+        history.replaceState(null, "", url);
+        load();
+      });
+    });
+  }
 
   if (pillRow) {
-    var pills = [{ slug: "all", name: "All" }].concat(site.categories);
+    var pills = [{ slug: "all", name: "All" }].concat(site.contentTypes);
     pillRow.innerHTML = pills
       .map(function (c) {
         return (
-          '<button class="pill' + (c.slug === activeCat ? " active" : "") + '" data-cat="' + c.slug + '">' +
+          '<button class="pill' + (c.slug === activeType ? " active" : "") + '" data-type="' + c.slug + '">' +
           c.name +
           "</button>"
         );
@@ -223,12 +280,15 @@ function initHomeGrid(site) {
       .join("");
   }
 
+  renderSubPills();
+
   var searchInput = document.getElementById("search-input");
 
   function load() {
     var q = (searchInput && searchInput.value || "").trim();
     var url = "/api/products?";
-    if (activeCat && activeCat !== "all") url += "category=" + encodeURIComponent(activeCat) + "&";
+    if (activeType && activeType !== "all") url += "type=" + encodeURIComponent(activeType) + "&";
+    if (activeCategory && activeCategory !== "all") url += "category=" + encodeURIComponent(activeCategory) + "&";
     if (q) url += "q=" + encodeURIComponent(q);
     fetch(url)
       .then(function (r) { return r.json(); })
@@ -240,11 +300,14 @@ function initHomeGrid(site) {
       pill.addEventListener("click", function () {
         pillRow.querySelectorAll(".pill").forEach(function (p) { p.classList.remove("active"); });
         pill.classList.add("active");
-        activeCat = pill.dataset.cat;
+        activeType = pill.dataset.type;
+        activeCategory = "all";
         var url = new URL(window.location.href);
-        if (activeCat === "all") url.searchParams.delete("category");
-        else url.searchParams.set("category", activeCat);
+        if (activeType === "all") url.searchParams.delete("type");
+        else url.searchParams.set("type", activeType);
+        url.searchParams.delete("cat");
         history.replaceState(null, "", url);
+        renderSubPills();
         load();
       });
     });
@@ -273,7 +336,7 @@ function initProductDetail(site) {
       var product = data.product;
       document.title = product.name + " — " + site.settings.site_name + " Design Market";
 
-      document.getElementById("detail-cat").textContent = categoryLabel(site, product.category);
+      document.getElementById("detail-cat").textContent = productClassifierLabel(site, product);
       document.getElementById("detail-name").textContent = product.name;
       document.getElementById("detail-price").textContent = formatPrice(product.price);
       document.getElementById("detail-desc").textContent = product.description;

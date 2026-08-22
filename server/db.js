@@ -23,6 +23,23 @@ function query(text, params) {
 }
 
 async function initSchema() {
+  // One-time migrations for pre-existing databases — must run before the
+  // CREATE TABLE IF NOT EXISTS block below, or that block would just create
+  // empty tables alongside the old ones instead of renaming them.
+  const oldCategories = await pool.query(`SELECT to_regclass('public.categories') AS t`);
+  const contentTypesExists = await pool.query(`SELECT to_regclass('public.content_types') AS t`);
+  if (oldCategories.rows[0].t && !contentTypesExists.rows[0].t) {
+    await pool.query(`ALTER TABLE categories RENAME TO content_types;`);
+  }
+
+  const productCols = await pool.query(
+    `SELECT column_name FROM information_schema.columns WHERE table_name = 'products'`
+  );
+  const productColNames = productCols.rows.map((r) => r.column_name);
+  if (productColNames.includes("category_slug") && !productColNames.includes("content_type_slug")) {
+    await pool.query(`ALTER TABLE products RENAME COLUMN category_slug TO content_type_slug;`);
+  }
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS settings (
       id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -39,7 +56,7 @@ async function initSchema() {
       hire_description TEXT NOT NULL DEFAULT ''
     );
 
-    CREATE TABLE IF NOT EXISTS categories (
+    CREATE TABLE IF NOT EXISTS content_types (
       id SERIAL PRIMARY KEY,
       slug TEXT UNIQUE NOT NULL,
       name TEXT NOT NULL,
@@ -59,7 +76,8 @@ async function initSchema() {
       id SERIAL PRIMARY KEY,
       slug TEXT UNIQUE NOT NULL,
       name TEXT NOT NULL,
-      category_slug TEXT NOT NULL,
+      content_type_slug TEXT NOT NULL,
+      category_slug TEXT,
       price REAL NOT NULL DEFAULT 0,
       aspect TEXT NOT NULL DEFAULT '4 / 3',
       thumb TEXT,
@@ -102,6 +120,17 @@ async function initSchema() {
     );
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS categories (
+      id SERIAL PRIMARY KEY,
+      slug TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      content_type_slug TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0
+    );
+  `);
+
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS category_slug TEXT;`);
   await pool.query(`ALTER TABLE ventures ADD COLUMN IF NOT EXISTS cover_url TEXT;`);
 }
 

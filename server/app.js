@@ -130,17 +130,28 @@ app.get(
   "/api/site",
   asyncRoute(async (req, res) => {
     const settings = (await query("SELECT * FROM settings WHERE id = 1")).rows[0];
-    const categories = (await query("SELECT slug, name FROM categories ORDER BY sort_order, id")).rows;
+    const contentTypes = (await query("SELECT slug, name FROM content_types ORDER BY sort_order, id")).rows;
     const pages = (await query("SELECT slug, title FROM pages ORDER BY sort_order, id")).rows;
-    res.json({ settings, categories, pages });
+    res.json({ settings, contentTypes, pages });
+  })
+);
+
+app.get(
+  "/api/content-types",
+  asyncRoute(async (req, res) => {
+    const contentTypes = (await query("SELECT slug, name FROM content_types ORDER BY sort_order, id")).rows;
+    res.json(contentTypes);
   })
 );
 
 app.get(
   "/api/categories",
   asyncRoute(async (req, res) => {
-    const categories = (await query("SELECT slug, name FROM categories ORDER BY sort_order, id")).rows;
-    res.json(categories);
+    const { type } = req.query;
+    const rows = type
+      ? (await query("SELECT slug, name, content_type_slug FROM categories WHERE content_type_slug = $1 ORDER BY sort_order, id", [type])).rows
+      : (await query("SELECT slug, name, content_type_slug FROM categories ORDER BY sort_order, id")).rows;
+    res.json(rows);
   })
 );
 
@@ -175,6 +186,7 @@ function toPublicProduct(row) {
   return {
     slug: row.slug,
     name: row.name,
+    type: row.content_type_slug,
     category: row.category_slug,
     price: row.price,
     aspect: row.aspect,
@@ -189,9 +201,13 @@ function toPublicProduct(row) {
 app.get(
   "/api/products",
   asyncRoute(async (req, res) => {
-    const { category, q } = req.query;
+    const { type, category, q } = req.query;
     const clauses = [];
     const params = [];
+    if (type && type !== "all") {
+      params.push(type);
+      clauses.push(`content_type_slug = $${params.length}`);
+    }
     if (category && category !== "all") {
       params.push(category);
       clauses.push(`category_slug = $${params.length}`);
@@ -214,8 +230,8 @@ app.get(
 
     const related = (
       await query(
-        "SELECT * FROM products WHERE category_slug = $1 AND slug != $2 ORDER BY sort_order, id LIMIT 4",
-        [row.category_slug, row.slug]
+        "SELECT * FROM products WHERE content_type_slug = $1 AND slug != $2 ORDER BY sort_order, id LIMIT 4",
+        [row.content_type_slug, row.slug]
       )
     ).rows;
     let relatedList = related.map(toPublicProduct);
@@ -273,10 +289,78 @@ app.put(
 );
 
 app.get(
+  "/api/admin/content-types",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    res.json((await query("SELECT * FROM content_types ORDER BY sort_order, id")).rows);
+  })
+);
+
+app.post(
+  "/api/admin/content-types",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const { slug, name } = req.body || {};
+    if (!slug || !name) return res.status(400).json({ error: "Slug and name are required." });
+    const maxOrder = (await query("SELECT COALESCE(MAX(sort_order), -1) AS m FROM content_types")).rows[0].m;
+    try {
+      const row = (
+        await query("INSERT INTO content_types (slug, name, sort_order) VALUES ($1, $2, $3) RETURNING *", [
+          slug, name, maxOrder + 1
+        ])
+      ).rows[0];
+      res.json(row);
+    } catch (e) {
+      if (e.code === "23505") return res.status(400).json({ error: "That slug is already in use." });
+      throw e;
+    }
+  })
+);
+
+app.put(
+  "/api/admin/content-types/:id",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const current = (await query("SELECT * FROM content_types WHERE id = $1", [req.params.id])).rows[0];
+    if (!current) return res.status(404).json({ error: "Not found." });
+    const { name, slug, sort_order } = req.body || {};
+    const next = {
+      name: name ?? current.name,
+      slug: slug ?? current.slug,
+      sort_order: sort_order ?? current.sort_order
+    };
+    try {
+      const row = (
+        await query("UPDATE content_types SET name = $1, slug = $2, sort_order = $3 WHERE id = $4 RETURNING *", [
+          next.name, next.slug, next.sort_order, req.params.id
+        ])
+      ).rows[0];
+      res.json(row);
+    } catch (e) {
+      if (e.code === "23505") return res.status(400).json({ error: "That slug is already in use." });
+      throw e;
+    }
+  })
+);
+
+app.delete(
+  "/api/admin/content-types/:id",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    await query("DELETE FROM content_types WHERE id = $1", [req.params.id]);
+    res.json({ ok: true });
+  })
+);
+
+app.get(
   "/api/admin/categories",
   requireAuth,
   asyncRoute(async (req, res) => {
-    res.json((await query("SELECT * FROM categories ORDER BY sort_order, id")).rows);
+    const { type } = req.query;
+    const rows = type
+      ? (await query("SELECT * FROM categories WHERE content_type_slug = $1 ORDER BY sort_order, id", [type])).rows
+      : (await query("SELECT * FROM categories ORDER BY sort_order, id")).rows;
+    res.json(rows);
   })
 );
 
@@ -284,14 +368,18 @@ app.post(
   "/api/admin/categories",
   requireAuth,
   asyncRoute(async (req, res) => {
-    const { slug, name } = req.body || {};
-    if (!slug || !name) return res.status(400).json({ error: "Slug and name are required." });
-    const maxOrder = (await query("SELECT COALESCE(MAX(sort_order), -1) AS m FROM categories")).rows[0].m;
+    const b = req.body || {};
+    if (!b.name || !b.type) return res.status(400).json({ error: "Name and content type are required." });
+    const slug = b.slug ? slugify(b.slug) : slugify(b.name);
+    const maxOrder = (
+      await query("SELECT COALESCE(MAX(sort_order), -1) AS m FROM categories WHERE content_type_slug = $1", [b.type])
+    ).rows[0].m;
     try {
       const row = (
-        await query("INSERT INTO categories (slug, name, sort_order) VALUES ($1, $2, $3) RETURNING *", [
-          slug, name, maxOrder + 1
-        ])
+        await query(
+          "INSERT INTO categories (slug, name, content_type_slug, sort_order) VALUES ($1, $2, $3, $4) RETURNING *",
+          [slug, b.name, b.type, maxOrder + 1]
+        )
       ).rows[0];
       res.json(row);
     } catch (e) {
@@ -307,17 +395,19 @@ app.put(
   asyncRoute(async (req, res) => {
     const current = (await query("SELECT * FROM categories WHERE id = $1", [req.params.id])).rows[0];
     if (!current) return res.status(404).json({ error: "Not found." });
-    const { name, slug, sort_order } = req.body || {};
+    const b = req.body || {};
     const next = {
-      name: name ?? current.name,
-      slug: slug ?? current.slug,
-      sort_order: sort_order ?? current.sort_order
+      name: b.name ?? current.name,
+      slug: b.slug ? slugify(b.slug) : current.slug,
+      content_type_slug: b.type ?? current.content_type_slug,
+      sort_order: b.sort_order ?? current.sort_order
     };
     try {
       const row = (
-        await query("UPDATE categories SET name = $1, slug = $2, sort_order = $3 WHERE id = $4 RETURNING *", [
-          next.name, next.slug, next.sort_order, req.params.id
-        ])
+        await query(
+          "UPDATE categories SET name = $1, slug = $2, content_type_slug = $3, sort_order = $4 WHERE id = $5 RETURNING *",
+          [next.name, next.slug, next.content_type_slug, next.sort_order, req.params.id]
+        )
       ).rows[0];
       res.json(row);
     } catch (e) {
@@ -500,18 +590,19 @@ app.post(
   requireAuth,
   asyncRoute(async (req, res) => {
     const b = req.body || {};
-    if (!b.name || !b.category) return res.status(400).json({ error: "Name and category are required." });
+    if (!b.name || !b.type) return res.status(400).json({ error: "Name and content type are required." });
     const slug = b.slug ? slugify(b.slug) : slugify(b.name);
     const maxOrder = (await query("SELECT COALESCE(MAX(sort_order), -1) AS m FROM products")).rows[0].m;
     try {
       const row = (
         await query(
-          `INSERT INTO products (slug, name, category_slug, price, aspect, thumb, images, description, formats, license, sort_order)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+          `INSERT INTO products (slug, name, content_type_slug, category_slug, price, aspect, thumb, images, description, formats, license, sort_order)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
           [
             slug,
             b.name,
-            b.category,
+            b.type,
+            b.category || null,
             Number(b.price) || 0,
             b.aspect || "4 / 3",
             b.thumb || null,
@@ -541,7 +632,8 @@ app.put(
     const next = {
       slug: b.slug ? slugify(b.slug) : current.slug,
       name: b.name ?? current.name,
-      category_slug: b.category ?? current.category_slug,
+      content_type_slug: b.type ?? current.content_type_slug,
+      category_slug: b.category !== undefined ? (b.category || null) : current.category_slug,
       price: b.price !== undefined ? Number(b.price) : current.price,
       aspect: b.aspect ?? current.aspect,
       thumb: b.thumb !== undefined ? b.thumb : current.thumb,
@@ -553,10 +645,10 @@ app.put(
     try {
       const row = (
         await query(
-          `UPDATE products SET slug=$1, name=$2, category_slug=$3, price=$4, aspect=$5,
-           thumb=$6, images=$7, description=$8, formats=$9, license=$10 WHERE id=$11 RETURNING *`,
+          `UPDATE products SET slug=$1, name=$2, content_type_slug=$3, category_slug=$4, price=$5, aspect=$6,
+           thumb=$7, images=$8, description=$9, formats=$10, license=$11 WHERE id=$12 RETURNING *`,
           [
-            next.slug, next.name, next.category_slug, next.price, next.aspect,
+            next.slug, next.name, next.content_type_slug, next.category_slug, next.price, next.aspect,
             next.thumb, next.images, next.description, next.formats, next.license, req.params.id
           ]
         )

@@ -322,6 +322,24 @@ img { max-width: 100%; display: block; }
   color: #fcfcfc;
 }
 
+#subpill-row {
+  margin: -6px 0 16px;
+}
+
+.pill-sm {
+  height: 24px;
+  padding: 0 10px;
+  font-size: 12px;
+  background: transparent;
+  border-color: var(--border);
+}
+
+.pill-sm.active {
+  background: var(--surface);
+  border-color: transparent;
+  color: var(--text);
+}
+
 .search-box {
   position: relative;
   min-width: 220px;

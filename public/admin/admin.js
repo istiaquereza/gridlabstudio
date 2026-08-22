@@ -76,10 +76,11 @@ function toast(message, isError) {
     });
 
   function boot() {
-    var tabs = ["settings", "categories", "pages", "ventures", "products", "hire-requests", "account"];
+    var tabs = ["settings", "content-types", "categories", "pages", "ventures", "products", "hire-requests", "account"];
     var renderers = {
       settings: renderSettings,
-      categories: renderCategories,
+      "content-types": renderContentTypes,
+      categories: renderCategoriesTab,
       pages: renderPages,
       ventures: renderVentures,
       products: renderProducts,
@@ -189,98 +190,207 @@ function renderSettings() {
   });
 }
 
-// ================= Categories panel =================
+// ================= Content Types panel =================
 
-function renderCategories() {
-  var el = document.getElementById("panel-categories");
-  el.innerHTML = '<h1>Categories</h1><p class="panel-sub">Loading…</p>';
+function renderContentTypes() {
+  var el = document.getElementById("panel-content-types");
+  el.innerHTML = '<h1>Content Types</h1><p class="panel-sub">Loading…</p>';
 
-  api("/api/admin/categories").then(function (categories) {
+  api("/api/admin/content-types").then(function (contentTypes) {
     el.innerHTML =
-      "<h1>Categories</h1>" +
-      '<p class="panel-sub">These power both the sidebar’s Browse section and the category filter pills on the homepage.</p>' +
-      '<form class="card" id="add-category-form">' +
-      "<h2>Add category</h2>" +
+      "<h1>Content Types</h1>" +
+      '<p class="panel-sub">These power the sidebar’s Browse section and the top-level filter pills on the homepage. Each one can have its own Categories underneath it.</p>' +
+      '<form class="card" id="add-type-form">' +
+      "<h2>Add content type</h2>" +
       '<div class="form-two">' +
-      '<div class="form-row"><label>Name</label><input name="name" id="cat-name-input" required></div>' +
-      '<div class="form-row"><label>Slug</label><input name="slug" id="cat-slug-input" required></div>' +
+      '<div class="form-row"><label>Name</label><input name="name" id="type-name-input" required></div>' +
+      '<div class="form-row"><label>Slug</label><input name="slug" id="type-slug-input" required></div>' +
       "</div>" +
-      '<button type="submit" class="btn btn-primary">Add Category</button>' +
+      '<button type="submit" class="btn btn-primary">Add Content Type</button>' +
       "</form>" +
-      '<div class="card"><table><thead><tr><th>Name</th><th>Slug</th><th></th></tr></thead><tbody id="categories-tbody"></tbody></table></div>';
+      '<div class="card"><table><thead><tr><th>Name</th><th>Slug</th><th></th></tr></thead><tbody id="types-tbody"></tbody></table></div>';
 
-    var nameInput = document.getElementById("cat-name-input");
-    var slugInput = document.getElementById("cat-slug-input");
+    var nameInput = document.getElementById("type-name-input");
+    var slugInput = document.getElementById("type-slug-input");
     var slugTouched = false;
     slugInput.addEventListener("input", function () { slugTouched = true; });
     nameInput.addEventListener("input", function () {
       if (!slugTouched) slugInput.value = slugify(nameInput.value);
     });
 
-    document.getElementById("add-category-form").addEventListener("submit", function (e) {
+    document.getElementById("add-type-form").addEventListener("submit", function (e) {
       e.preventDefault();
       var data = Object.fromEntries(new FormData(e.target).entries());
-      api("/api/admin/categories", { method: "POST", body: data })
-        .then(function () { toast("Category added."); renderCategories(); })
+      api("/api/admin/content-types", { method: "POST", body: data })
+        .then(function () { toast("Content type added."); renderContentTypes(); })
         .catch(function (err) { toast(err.message, true); });
     });
 
-    var tbody = document.getElementById("categories-tbody");
-    if (!categories.length) {
-      tbody.innerHTML = '<tr><td colspan="3" class="empty-row">No categories yet.</td></tr>';
+    var tbody = document.getElementById("types-tbody");
+    if (!contentTypes.length) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-row">No content types yet.</td></tr>';
       return;
     }
 
-    categories.forEach(function (cat, i) {
+    contentTypes.forEach(function (type, i) {
       var row = document.createElement("tr");
       row.innerHTML =
-        "<td>" + escapeHTML(cat.name) + "</td>" +
-        "<td>" + escapeHTML(cat.slug) + "</td>" +
+        "<td>" + escapeHTML(type.name) + "</td>" +
+        "<td>" + escapeHTML(type.slug) + "</td>" +
         '<td><div class="row-actions">' +
         '<button class="btn btn-sm" data-action="up"' + (i === 0 ? " disabled" : "") + ">&uarr;</button>" +
-        '<button class="btn btn-sm" data-action="down"' + (i === categories.length - 1 ? " disabled" : "") + ">&darr;</button>" +
+        '<button class="btn btn-sm" data-action="down"' + (i === contentTypes.length - 1 ? " disabled" : "") + ">&darr;</button>" +
         '<button class="btn btn-sm" data-action="edit">Edit</button>' +
         '<button class="btn btn-sm btn-danger" data-action="delete">Delete</button>' +
         "</div></td>";
 
       row.querySelector('[data-action="delete"]').addEventListener("click", function () {
-        if (!confirm('Delete category "' + cat.name + '"? Products in this category will keep their old category value.')) return;
-        api("/api/admin/categories/" + cat.id, { method: "DELETE" }).then(function () {
-          toast("Category deleted.");
-          renderCategories();
+        if (!confirm('Delete content type "' + type.name + '"? Its categories and products will keep their old value.')) return;
+        api("/api/admin/content-types/" + type.id, { method: "DELETE" }).then(function () {
+          toast("Content type deleted.");
+          renderContentTypes();
         });
       });
 
       row.querySelector('[data-action="up"]').addEventListener("click", function () {
-        var prev = categories[i - 1];
+        var prev = contentTypes[i - 1];
         Promise.all([
-          api("/api/admin/categories/" + cat.id, { method: "PUT", body: { sort_order: prev.sort_order } }),
-          api("/api/admin/categories/" + prev.id, { method: "PUT", body: { sort_order: cat.sort_order } })
-        ]).then(renderCategories);
+          api("/api/admin/content-types/" + type.id, { method: "PUT", body: { sort_order: prev.sort_order } }),
+          api("/api/admin/content-types/" + prev.id, { method: "PUT", body: { sort_order: type.sort_order } })
+        ]).then(renderContentTypes);
       });
 
       row.querySelector('[data-action="down"]').addEventListener("click", function () {
-        var next = categories[i + 1];
+        var next = contentTypes[i + 1];
         Promise.all([
-          api("/api/admin/categories/" + cat.id, { method: "PUT", body: { sort_order: next.sort_order } }),
-          api("/api/admin/categories/" + next.id, { method: "PUT", body: { sort_order: cat.sort_order } })
-        ]).then(renderCategories);
+          api("/api/admin/content-types/" + type.id, { method: "PUT", body: { sort_order: next.sort_order } }),
+          api("/api/admin/content-types/" + next.id, { method: "PUT", body: { sort_order: type.sort_order } })
+        ]).then(renderContentTypes);
       });
 
       row.querySelector('[data-action="edit"]').addEventListener("click", function () {
         row.innerHTML =
-          '<td><input type="text" value="' + escapeHTML(cat.name) + '" id="edit-name-' + cat.id + '"></td>' +
-          '<td><input type="text" value="' + escapeHTML(cat.slug) + '" id="edit-slug-' + cat.id + '"></td>' +
+          '<td><input type="text" value="' + escapeHTML(type.name) + '" id="edit-type-name-' + type.id + '"></td>' +
+          '<td><input type="text" value="' + escapeHTML(type.slug) + '" id="edit-type-slug-' + type.id + '"></td>' +
           '<td><div class="row-actions">' +
           '<button class="btn btn-sm btn-primary" data-action="save">Save</button>' +
           '<button class="btn btn-sm" data-action="cancel">Cancel</button>' +
           "</div></td>";
-        row.querySelector('[data-action="cancel"]').addEventListener("click", renderCategories);
+        row.querySelector('[data-action="cancel"]').addEventListener("click", renderContentTypes);
         row.querySelector('[data-action="save"]').addEventListener("click", function () {
-          var name = document.getElementById("edit-name-" + cat.id).value;
-          var slug = document.getElementById("edit-slug-" + cat.id).value;
-          api("/api/admin/categories/" + cat.id, { method: "PUT", body: { name: name, slug: slug } })
-            .then(function () { toast("Category updated."); renderCategories(); })
+          var name = document.getElementById("edit-type-name-" + type.id).value;
+          var slug = document.getElementById("edit-type-slug-" + type.id).value;
+          api("/api/admin/content-types/" + type.id, { method: "PUT", body: { name: name, slug: slug } })
+            .then(function () { toast("Content type updated."); renderContentTypes(); })
+            .catch(function (err) { toast(err.message, true); });
+        });
+      });
+
+      tbody.appendChild(row);
+    });
+  });
+}
+
+// ================= Categories panel =================
+
+function renderCategoriesTab() {
+  var el = document.getElementById("panel-categories");
+  el.innerHTML = '<h1>Categories</h1><p class="panel-sub">Loading…</p>';
+
+  Promise.all([api("/api/admin/categories"), api("/api/admin/content-types")]).then(function (res) {
+    var categories = res[0];
+    var contentTypes = res[1];
+
+    function typeName(slug) {
+      var t = contentTypes.find(function (t) { return t.slug === slug; });
+      return t ? t.name : slug;
+    }
+
+    var typeOptions = contentTypes.map(function (t) {
+      return '<option value="' + t.slug + '">' + escapeHTML(t.name) + "</option>";
+    }).join("");
+
+    el.innerHTML =
+      "<h1>Categories</h1>" +
+      '<p class="panel-sub">Each category belongs to a Content Type — e.g. under "Web Design" you might have "Landing Pages" or "Dashboards". These show as sub-filters when a content type is selected on the homepage, and as options when uploading a product.</p>' +
+      (contentTypes.length
+        ? '<form class="card" id="add-category-form">' +
+          "<h2>Add category</h2>" +
+          '<div class="form-two">' +
+          '<div class="form-row"><label>Content Type</label><select name="type" id="cat-type-input">' + typeOptions + "</select></div>" +
+          '<div class="form-row"><label>Name</label><input name="name" id="cat-name-input" required></div>' +
+          "</div>" +
+          '<div class="form-row"><label>Slug</label><input name="slug" id="cat-slug-input" placeholder="auto from name"></div>' +
+          '<button type="submit" class="btn btn-primary">Add Category</button>' +
+          "</form>"
+        : '<p class="panel-sub">Create a content type first, then come back here to add categories under it.</p>') +
+      '<div class="card"><table><thead><tr><th>Name</th><th>Content Type</th><th>Slug</th><th></th></tr></thead><tbody id="categories-tbody"></tbody></table></div>';
+
+    if (contentTypes.length) {
+      var nameInput = document.getElementById("cat-name-input");
+      var slugInput = document.getElementById("cat-slug-input");
+      var slugTouched = false;
+      slugInput.addEventListener("input", function () { slugTouched = true; });
+      nameInput.addEventListener("input", function () {
+        if (!slugTouched) slugInput.value = slugify(nameInput.value);
+      });
+
+      document.getElementById("add-category-form").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var data = Object.fromEntries(new FormData(e.target).entries());
+        api("/api/admin/categories", { method: "POST", body: data })
+          .then(function () { toast("Category added."); renderCategoriesTab(); })
+          .catch(function (err) { toast(err.message, true); });
+      });
+    }
+
+    var tbody = document.getElementById("categories-tbody");
+    if (!categories.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-row">No categories yet.</td></tr>';
+      return;
+    }
+
+    categories.forEach(function (cat) {
+      var row = document.createElement("tr");
+      row.innerHTML =
+        "<td>" + escapeHTML(cat.name) + "</td>" +
+        "<td>" + escapeHTML(typeName(cat.content_type_slug)) + "</td>" +
+        "<td>" + escapeHTML(cat.slug) + "</td>" +
+        '<td><div class="row-actions">' +
+        '<button class="btn btn-sm" data-action="edit">Edit</button>' +
+        '<button class="btn btn-sm btn-danger" data-action="delete">Delete</button>' +
+        "</div></td>";
+
+      row.querySelector('[data-action="delete"]').addEventListener("click", function () {
+        if (!confirm('Delete category "' + cat.name + '"? Products using it will keep their old value.')) return;
+        api("/api/admin/categories/" + cat.id, { method: "DELETE" }).then(function () {
+          toast("Category deleted.");
+          renderCategoriesTab();
+        });
+      });
+
+      row.querySelector('[data-action="edit"]').addEventListener("click", function () {
+        var editTypeOptions = contentTypes.map(function (t) {
+          var selected = t.slug === cat.content_type_slug ? " selected" : "";
+          return '<option value="' + t.slug + '"' + selected + ">" + escapeHTML(t.name) + "</option>";
+        }).join("");
+        row.innerHTML =
+          '<td><input type="text" value="' + escapeHTML(cat.name) + '" id="edit-cat-name-' + cat.id + '"></td>' +
+          '<td><select id="edit-cat-type-' + cat.id + '">' + editTypeOptions + "</select></td>" +
+          '<td><input type="text" value="' + escapeHTML(cat.slug) + '" id="edit-cat-slug-' + cat.id + '"></td>' +
+          '<td><div class="row-actions">' +
+          '<button class="btn btn-sm btn-primary" data-action="save">Save</button>' +
+          '<button class="btn btn-sm" data-action="cancel">Cancel</button>' +
+          "</div></td>";
+        row.querySelector('[data-action="cancel"]').addEventListener("click", renderCategoriesTab);
+        row.querySelector('[data-action="save"]').addEventListener("click", function () {
+          var body = {
+            name: document.getElementById("edit-cat-name-" + cat.id).value,
+            type: document.getElementById("edit-cat-type-" + cat.id).value,
+            slug: document.getElementById("edit-cat-slug-" + cat.id).value
+          };
+          api("/api/admin/categories/" + cat.id, { method: "PUT", body: body })
+            .then(function () { toast("Category updated."); renderCategoriesTab(); })
             .catch(function (err) { toast(err.message, true); });
         });
       });
@@ -544,34 +654,43 @@ function renderProducts() {
   var el = document.getElementById("panel-products");
   el.innerHTML = '<h1>Products</h1><p class="panel-sub">Loading…</p>';
 
-  Promise.all([api("/api/admin/products"), api("/api/admin/categories")]).then(function (res) {
+  Promise.all([api("/api/admin/products"), api("/api/admin/content-types"), api("/api/admin/categories")]).then(function (res) {
     var products = res[0];
-    var categories = res[1];
+    var contentTypes = res[1];
+    var categories = res[2];
+
+    function typeName(slug) {
+      var t = contentTypes.find(function (t) { return t.slug === slug; });
+      return t ? t.name : slug;
+    }
 
     el.innerHTML =
       '<div class="section-head"><div>' +
       "<h1>Products</h1>" +
       '<p class="panel-sub" style="margin-bottom:0;">Design assets shown in the marketplace grid.</p>' +
-      "</div><button class=\"btn btn-primary\" id=\"add-product-btn\">Add Product</button></div>" +
+      "</div><button class=\"btn btn-primary\" id=\"add-product-btn\"" + (contentTypes.length ? "" : " disabled") + ">Add Product</button></div>" +
+      (contentTypes.length ? "" : '<p class="panel-sub">Create a content type first (Content Types tab) before adding products.</p>') +
       '<div id="product-form-slot"></div>' +
-      '<div class="card"><table><thead><tr><th></th><th>Name</th><th>Category</th><th>Price</th><th></th></tr></thead><tbody id="products-tbody"></tbody></table></div>';
+      '<div class="card"><table><thead><tr><th></th><th>Name</th><th>Content Type</th><th>Category</th><th>Price</th><th></th></tr></thead><tbody id="products-tbody"></tbody></table></div>';
 
     document.getElementById("add-product-btn").addEventListener("click", function () {
-      showProductForm(null, categories);
+      showProductForm(null, contentTypes, categories);
     });
 
     var tbody = document.getElementById("products-tbody");
     if (!products.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-row">No products yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-row">No products yet.</td></tr>';
       return;
     }
 
     products.forEach(function (p) {
+      var cat = categories.find(function (c) { return c.slug === p.category_slug; });
       var row = document.createElement("tr");
       row.innerHTML =
         '<td class="thumb-cell">' + (p.thumb ? '<img src="' + p.thumb + '" alt="">' : "") + "</td>" +
         "<td>" + escapeHTML(p.name) + "</td>" +
-        "<td>" + escapeHTML(p.category_slug) + "</td>" +
+        "<td>" + escapeHTML(typeName(p.content_type_slug)) + "</td>" +
+        "<td>" + escapeHTML(cat ? cat.name : "—") + "</td>" +
         "<td>$" + p.price + "</td>" +
         '<td><div class="row-actions">' +
         '<button class="btn btn-sm" data-action="edit">Edit</button>' +
@@ -587,7 +706,7 @@ function renderProducts() {
       });
 
       row.querySelector('[data-action="edit"]').addEventListener("click", function () {
-        showProductForm(p, categories);
+        showProductForm(p, contentTypes, categories);
       });
 
       tbody.appendChild(row);
@@ -595,18 +714,31 @@ function renderProducts() {
   });
 }
 
-function showProductForm(product, categories) {
+function showProductForm(product, contentTypes, categories) {
   var slot = document.getElementById("product-form-slot");
   var isEdit = !!product;
   var galleryUrls = product ? (product.images || []).slice() : [];
   var thumbUrl = product ? product.thumb : null;
+  var currentType = product ? product.content_type_slug : (contentTypes[0] && contentTypes[0].slug);
 
-  var categoryOptions = categories
-    .map(function (c) {
-      var selected = product && product.category_slug === c.slug ? " selected" : "";
-      return '<option value="' + c.slug + '"' + selected + ">" + escapeHTML(c.name) + "</option>";
+  var typeOptions = contentTypes
+    .map(function (t) {
+      var selected = t.slug === currentType ? " selected" : "";
+      return '<option value="' + t.slug + '"' + selected + ">" + escapeHTML(t.name) + "</option>";
     })
     .join("");
+
+  function categoryOptionsFor(typeSlug) {
+    var opts = '<option value="">— None —</option>';
+    opts += categories
+      .filter(function (c) { return c.content_type_slug === typeSlug; })
+      .map(function (c) {
+        var selected = product && product.category_slug === c.slug ? " selected" : "";
+        return '<option value="' + c.slug + '"' + selected + ">" + escapeHTML(c.name) + "</option>";
+      })
+      .join("");
+    return opts;
+  }
 
   var aspectOptions = ASPECT_OPTIONS.map(function (a) {
     var selected = product && product.aspect === a ? " selected" : "";
@@ -621,8 +753,18 @@ function showProductForm(product, categories) {
     '<div class="form-row"><label>Slug</label><input id="pf-slug" value="' + escapeHTML(product ? product.slug : "") + '" placeholder="auto from name"></div>' +
     "</div>" +
     '<div class="form-two">' +
-    '<div class="form-row"><label>Category</label><select id="pf-category">' + categoryOptions + "</select></div>" +
+    '<div class="form-row"><label>Content Type</label><select id="pf-type">' + typeOptions + "</select></div>" +
     '<div class="form-row"><label>Price (USD)</label><input id="pf-price" type="number" min="0" step="1" value="' + (product ? product.price : "") + '"></div>' +
+    "</div>" +
+    '<div class="form-row"><label>Category (optional)</label>' +
+    '<div style="display:flex;gap:8px;align-items:center;">' +
+    '<select id="pf-category" style="flex:1;">' + categoryOptionsFor(currentType) + "</select>" +
+    '<button type="button" class="btn btn-sm" id="pf-new-category-btn">+ New</button>' +
+    "</div>" +
+    '<div id="pf-new-category-row" style="display:none;margin-top:8px;gap:8px;">' +
+    '<input type="text" id="pf-new-category-name" placeholder="New category name" style="flex:1;">' +
+    '<button type="button" class="btn btn-sm btn-primary" id="pf-new-category-save">Add</button>' +
+    "</div>" +
     "</div>" +
     '<div class="form-two">' +
     '<div class="form-row"><label>Formats</label><input id="pf-formats" value="' + escapeHTML(product ? product.formats : "") + '" placeholder="Figma, PNG..."></div>' +
@@ -666,6 +808,32 @@ function showProductForm(product, categories) {
   renderThumbPreview();
   renderGalleryPreview();
 
+  document.getElementById("pf-type").addEventListener("change", function (e) {
+    document.getElementById("pf-category").innerHTML = categoryOptionsFor(e.target.value);
+  });
+
+  document.getElementById("pf-new-category-btn").addEventListener("click", function () {
+    var row = document.getElementById("pf-new-category-row");
+    row.style.display = row.style.display === "none" ? "flex" : "none";
+    if (row.style.display === "flex") document.getElementById("pf-new-category-name").focus();
+  });
+
+  document.getElementById("pf-new-category-save").addEventListener("click", function () {
+    var name = document.getElementById("pf-new-category-name").value.trim();
+    var type = document.getElementById("pf-type").value;
+    if (!name) return toast("Enter a category name.", true);
+    api("/api/admin/categories", { method: "POST", body: { name: name, type: type } })
+      .then(function (newCat) {
+        categories.push(newCat);
+        document.getElementById("pf-category").innerHTML = categoryOptionsFor(type);
+        document.getElementById("pf-category").value = newCat.slug;
+        document.getElementById("pf-new-category-name").value = "";
+        document.getElementById("pf-new-category-row").style.display = "none";
+        toast("Category added.");
+      })
+      .catch(function (err) { toast(err.message, true); });
+  });
+
   document.getElementById("pf-thumb-file").addEventListener("change", function (e) {
     var file = e.target.files[0];
     if (!file) return;
@@ -703,7 +871,8 @@ function showProductForm(product, categories) {
     var body = {
       name: document.getElementById("pf-name").value,
       slug: document.getElementById("pf-slug").value || undefined,
-      category: document.getElementById("pf-category").value,
+      type: document.getElementById("pf-type").value,
+      category: document.getElementById("pf-category").value || null,
       price: document.getElementById("pf-price").value,
       formats: document.getElementById("pf-formats").value,
       license: document.getElementById("pf-license").value,
@@ -713,6 +882,7 @@ function showProductForm(product, categories) {
       images: galleryUrls
     };
     if (!body.name) return toast("Name is required.", true);
+    if (!body.type) return toast("Choose a content type.", true);
 
     var request = isEdit
       ? api("/api/admin/products/" + product.id, { method: "PUT", body: body })

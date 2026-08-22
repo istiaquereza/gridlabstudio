@@ -27,10 +27,10 @@ async function seedSettings() {
   );
 }
 
-async function seedCategories() {
-  const { rows } = await query("SELECT COUNT(*)::int AS n FROM categories");
+async function seedContentTypes() {
+  const { rows } = await query("SELECT COUNT(*)::int AS n FROM content_types");
   if (rows[0].n > 0) return;
-  const categories = [
+  const contentTypes = [
     ["web", "Web Design"],
     ["branding", "Branding"],
     ["ui-kits", "UI Kits"],
@@ -41,9 +41,9 @@ async function seedCategories() {
     ["print", "Print"],
     ["motion", "Motion"]
   ];
-  for (let i = 0; i < categories.length; i++) {
-    const [slug, name] = categories[i];
-    await query("INSERT INTO categories (slug, name, sort_order) VALUES ($1, $2, $3)", [slug, name, i]);
+  for (let i = 0; i < contentTypes.length; i++) {
+    const [slug, name] = contentTypes[i];
+    await query("INSERT INTO content_types (slug, name, sort_order) VALUES ($1, $2, $3)", [slug, name, i]);
   }
 }
 
@@ -92,7 +92,7 @@ async function seedProducts() {
       placeholderThumb(p.name + " — usage", p.category, p.slug + "-3")
     ]);
     await query(
-      `INSERT INTO products (slug, name, category_slug, price, aspect, thumb, images, description, formats, license, sort_order)
+      `INSERT INTO products (slug, name, content_type_slug, price, aspect, thumb, images, description, formats, license, sort_order)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [p.slug, p.name, p.category, p.price, p.aspect, thumb, images, p.description, p.formats, p.license, i]
     );
@@ -136,7 +136,7 @@ async function seedAdminPassword() {
 async function seed() {
   await initSchema();
   await seedSettings();
-  await seedCategories();
+  await seedContentTypes();
   await seedPages();
   await seedProducts();
   await seedVentures();
