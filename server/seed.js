@@ -99,6 +99,33 @@ async function seedProducts() {
   }
 }
 
+async function seedVentures() {
+  const { rows } = await query("SELECT COUNT(*)::int AS n FROM ventures");
+  if (rows[0].n > 0) return;
+
+  const ventures = [
+    { slug: "fieldnote", name: "Fieldnote", category: "Productivity", description: "A minimal notes app for design teams who think in sketches, not paragraphs.", color: "web" },
+    { slug: "loopline", name: "Loopline", category: "Prototyping", description: "Turn Figma frames into shareable, clickable prototypes in under a minute.", color: "branding" },
+    { slug: "palette-foundry", name: "Palette Foundry", category: "Design Tools", description: "Generate accessible color systems from a single brand color, with contrast built in.", color: "ui-kits" },
+    { slug: "driftwood", name: "Driftwood", category: "Website Builder", description: "A no-code site builder for portfolios and small studios, built on our own design system.", color: "illustration" },
+    { slug: "signal", name: "Signal", category: "Client Communication", description: "Async client updates and approvals, without opening another Slack channel.", color: "templates" },
+    { slug: "kerning", name: "Kerning", category: "Typography", description: "A type-pairing tool trained on a decade of GridLab brand work.", color: "icons" },
+    { slug: "overlook", name: "Overlook", category: "Analytics", description: "Lightweight, privacy-first analytics for marketing sites.", color: "packaging" },
+    { slug: "studio-os", name: "Studio OS", category: "Operations", description: "The internal tool GridLab runs on — project tracking, invoicing, and time, built for small studios.", color: "motion" }
+  ];
+
+  const insert = query;
+  for (let i = 0; i < ventures.length; i++) {
+    const v = ventures[i];
+    const logo = placeholderThumb(v.name.charAt(0), v.color, v.slug + "-logo", 200, 200);
+    await insert(
+      `INSERT INTO ventures (slug, name, category, logo_url, description, link_url, sort_order)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [v.slug, v.name, v.category, logo, v.description, "", i]
+    );
+  }
+}
+
 async function seedAdminPassword() {
   if (await hasAdminPassword()) return null;
   const password = crypto.randomBytes(9).toString("base64url");
@@ -112,6 +139,7 @@ async function seed() {
   await seedCategories();
   await seedPages();
   await seedProducts();
+  await seedVentures();
   const newPassword = await seedAdminPassword();
   if (newPassword) {
     console.log("\n==============================================");
