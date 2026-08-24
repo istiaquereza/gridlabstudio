@@ -367,23 +367,32 @@ function initProductDetail(site) {
       document.getElementById("detail-format").textContent = product.formats;
       document.getElementById("detail-license").textContent = product.license;
 
-      var mainImg = document.getElementById("gallery-main-img");
+      var mainEl = document.querySelector(".gallery-main");
       var thumbsEl = document.getElementById("gallery-thumbs");
       var captionEl = document.getElementById("gallery-caption");
 
-      var galleryItems = (product.images || []).map(function (img) {
-        return typeof img === "string" ? { url: img, keyword: "", caption: "" } : img;
-      });
+      function normalizeItem(img) {
+        if (typeof img === "string") return { url: img, type: "image", caption: "", tags: [] };
+        var tags = Array.isArray(img.tags) ? img.tags : (img.keyword ? [img.keyword] : []);
+        return { url: img.url, type: img.type === "video" ? "video" : "image", caption: img.caption || "", tags: tags };
+      }
+
+      var galleryItems = (product.images || []).map(normalizeItem);
       var viewerItems = [];
       var coverUrl = product.cover || product.thumb;
-      if (coverUrl) viewerItems.push({ url: coverUrl, keyword: product.name, caption: "" });
+      if (coverUrl) viewerItems.push({ url: coverUrl, type: "image", caption: "", tags: [product.name] });
       viewerItems = viewerItems.concat(galleryItems);
+
+      function labelFor(item) {
+        return item.tags && item.tags.length ? item.tags.join(", ") : product.name;
+      }
 
       function showItem(i) {
         var item = viewerItems[i];
         if (!item) return;
-        mainImg.src = item.url;
-        mainImg.alt = item.keyword || product.name;
+        mainEl.innerHTML = item.type === "video"
+          ? '<video src="' + item.url + '" controls playsinline></video>'
+          : '<img src="' + item.url + '" alt="' + escapeHTML(labelFor(item)) + '">';
         if (captionEl) {
           captionEl.textContent = item.caption || "";
           captionEl.style.display = item.caption ? "" : "none";
@@ -392,11 +401,10 @@ function initProductDetail(site) {
 
       thumbsEl.innerHTML = viewerItems
         .map(function (item, i) {
-          return (
-            '<button data-i="' + i + '" class="' + (i === 0 ? "active" : "") + '">' +
-            '<img src="' + item.url + '" alt="' + escapeHTML(item.keyword || product.name) + '">' +
-            "</button>"
-          );
+          var media = item.type === "video"
+            ? '<video src="' + item.url + '" muted playsinline></video>'
+            : '<img src="' + item.url + '" alt="' + escapeHTML(labelFor(item)) + '">';
+          return '<button data-i="' + i + '" class="' + (i === 0 ? "active" : "") + '">' + media + "</button>";
         })
         .join("");
 

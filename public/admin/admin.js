@@ -26,6 +26,13 @@ function slugify(s) {
   return String(s).toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+function normalizeGalleryItem(img) {
+  if (typeof img === "string") return { url: img, type: "image", caption: "", tags: [] };
+  var tags = Array.isArray(img.tags) ? img.tags.slice() : (img.keyword ? [img.keyword] : []);
+  var type = img.type === "video" ? "video" : "image";
+  return { url: img.url, type: type, caption: img.caption || "", tags: tags };
+}
+
 function toast(message, isError) {
   var el = document.getElementById("admin-toast");
   if (!el) return;
@@ -769,11 +776,7 @@ function renderProducts() {
 function showProductForm(product, contentTypes, categories) {
   var slot = document.getElementById("product-form-slot");
   var isEdit = !!product;
-  var galleryImages = product
-    ? (product.images || []).map(function (img) {
-        return typeof img === "string" ? { url: img, keyword: "", caption: "" } : { url: img.url, keyword: img.keyword || "", caption: img.caption || "" };
-      })
-    : [];
+  var galleryImages = product ? (product.images || []).map(normalizeGalleryItem) : [];
   var thumbUrl = product ? product.thumb : null;
   var coverUrl = product ? product.cover_url : null;
   var currentType = product ? product.content_type_slug : (contentTypes[0] && contentTypes[0].slug);
@@ -835,8 +838,12 @@ function showProductForm(product, contentTypes, categories) {
     '<div class="form-row"><label>Cover photo</label><span class="hint">Main image on the product page</span><input type="file" id="pf-cover-file" accept="image/*">' +
     '<div id="pf-cover-preview" style="margin-top:6px;"></div></div>' +
     "</div>" +
-    '<div class="form-row"><label>Gallery images (multiple)</label><span class="hint">Each image can have its own keyword and caption</span><input type="file" id="pf-gallery-file" accept="image/*" multiple>' +
-    '<div id="pf-gallery-preview" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;"></div></div>' +
+    '<div class="form-row"><label>Gallery photos &amp; videos</label><span class="hint">Add as many as you like — each one can have its own description and tags</span>' +
+    '<div class="gallery-upload-row">' +
+    '<button type="button" class="gallery-add-btn" id="pf-gallery-add-btn" aria-label="Add photo or video">+</button>' +
+    '<input type="file" id="pf-gallery-file" accept="image/*,video/*" multiple style="display:none;">' +
+    "</div>" +
+    '<div id="pf-gallery-preview" class="gallery-items"></div></div>' +
     '<div style="display:flex;gap:8px;margin-top:8px;">' +
     '<button class="btn btn-primary" id="pf-save">' + (isEdit ? "Save Changes" : "Create Product") + "</button>" +
     '<button class="btn" id="pf-cancel">Cancel</button>' +
@@ -855,25 +862,58 @@ function showProductForm(product, contentTypes, categories) {
     var box = document.getElementById("pf-gallery-preview");
     box.innerHTML = galleryImages
       .map(function (img, i) {
+        var media = img.type === "video"
+          ? '<video src="' + img.url + '" muted playsinline></video><span class="media-badge">Video</span>'
+          : '<img src="' + img.url + '" alt="">';
+        var chips = img.tags
+          .map(function (tag, ti) {
+            return (
+              '<span class="gallery-tag-chip">' + escapeHTML(tag) +
+              '<button type="button" data-i="' + i + '" data-ti="' + ti + '" data-action="remove-tag" aria-label="Remove tag">&times;</button>' +
+              "</span>"
+            );
+          })
+          .join("");
         return (
-          '<div style="display:flex;gap:10px;align-items:flex-start;border:1px solid var(--border);border-radius:10px;padding:8px;">' +
-          '<img src="' + img.url + '" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;">' +
-          '<div style="flex:1;display:flex;gap:8px;">' +
-          '<input type="text" data-i="' + i + '" data-field="keyword" placeholder="Keyword" value="' + escapeHTML(img.keyword) + '" style="flex:1;">' +
-          '<input type="text" data-i="' + i + '" data-field="caption" placeholder="Caption" value="' + escapeHTML(img.caption) + '" style="flex:1;">' +
+          '<div class="gallery-item-card">' +
+          '<div class="gallery-item-media">' + media + "</div>" +
+          '<div class="gallery-item-fields">' +
+          '<input type="text" data-i="' + i + '" data-field="caption" placeholder="Add a description" value="' + escapeHTML(img.caption) + '">' +
+          '<div class="gallery-tags">' + chips +
+          '<input type="text" class="gallery-tag-input" data-i="' + i + '" placeholder="Add a tag, press Enter">' +
           "</div>" +
-          '<button type="button" data-i="' + i + '" class="btn btn-sm btn-danger" style="flex-shrink:0;">Remove</button>' +
+          "</div>" +
+          '<button type="button" data-i="' + i + '" data-action="remove-item" class="btn btn-sm btn-danger gallery-item-remove">Remove</button>' +
           "</div>"
         );
       })
       .join("");
-    box.querySelectorAll("input").forEach(function (input) {
+
+    box.querySelectorAll('input[data-field="caption"]').forEach(function (input) {
       input.addEventListener("input", function () {
-        var i = parseInt(input.dataset.i, 10);
-        galleryImages[i][input.dataset.field] = input.value;
+        galleryImages[parseInt(input.dataset.i, 10)].caption = input.value;
       });
     });
-    box.querySelectorAll("button").forEach(function (btn) {
+
+    box.querySelectorAll(".gallery-tag-input").forEach(function (input) {
+      input.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        var tag = input.value.trim();
+        if (!tag) return;
+        galleryImages[parseInt(input.dataset.i, 10)].tags.push(tag);
+        renderGalleryPreview();
+      });
+    });
+
+    box.querySelectorAll('[data-action="remove-tag"]').forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        galleryImages[parseInt(btn.dataset.i, 10)].tags.splice(parseInt(btn.dataset.ti, 10), 1);
+        renderGalleryPreview();
+      });
+    });
+
+    box.querySelectorAll('[data-action="remove-item"]').forEach(function (btn) {
       btn.addEventListener("click", function () {
         galleryImages.splice(parseInt(btn.dataset.i, 10), 1);
         renderGalleryPreview();
@@ -936,10 +976,15 @@ function showProductForm(product, contentTypes, categories) {
       .catch(function (err) { toast(err.message, true); });
   });
 
+  document.getElementById("pf-gallery-add-btn").addEventListener("click", function () {
+    document.getElementById("pf-gallery-file").click();
+  });
+
   document.getElementById("pf-gallery-file").addEventListener("change", function (e) {
     var files = Array.from(e.target.files || []);
     var chain = Promise.resolve();
     files.forEach(function (file) {
+      var type = file.type.indexOf("video/") === 0 ? "video" : "image";
       chain = chain
         .then(function () {
           var fd = new FormData();
@@ -947,16 +992,19 @@ function showProductForm(product, contentTypes, categories) {
           return api("/api/admin/upload/product", { method: "POST", body: fd });
         })
         .then(function (res) {
-          galleryImages.push({ url: res.url, keyword: "", caption: "" });
+          galleryImages.push({ url: res.url, type: type, caption: "", tags: [] });
           renderGalleryPreview();
         });
     });
-    chain.catch(function (err) { toast(err.message, true); });
+    chain.catch(function (err) { toast(err.message, true); }).then(function () {
+      e.target.value = "";
+    });
   });
 
   document.getElementById("pf-cancel").addEventListener("click", function () { slot.innerHTML = ""; });
 
   document.getElementById("pf-save").addEventListener("click", function () {
+    var firstImage = galleryImages.find(function (img) { return img.type !== "video"; });
     var body = {
       name: document.getElementById("pf-name").value,
       slug: document.getElementById("pf-slug").value || undefined,
@@ -967,7 +1015,7 @@ function showProductForm(product, contentTypes, categories) {
       license: document.getElementById("pf-license").value,
       aspect: document.getElementById("pf-aspect").value,
       description: document.getElementById("pf-description").value,
-      thumb: thumbUrl || (galleryImages[0] && galleryImages[0].url) || null,
+      thumb: thumbUrl || (firstImage && firstImage.url) || null,
       cover: coverUrl || thumbUrl || null,
       images: galleryImages
     };

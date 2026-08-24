@@ -44,9 +44,12 @@ function asyncRoute(handler) {
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 8 * 1024 * 1024 },
+  limits: { fileSize: 60 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = new Set([".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"]);
+    const allowed = new Set([
+      ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp",
+      ".mp4", ".webm", ".mov", ".m4v", ".ogg"
+    ]);
     const ext = path.extname(file.originalname).toLowerCase();
     cb(null, allowed.has(ext));
   }
