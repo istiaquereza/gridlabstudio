@@ -45,12 +45,12 @@ img { max-width: 100%; display: block; }
   width: var(--sidebar-w);
   flex-shrink: 0;
   height: calc(100vh - (var(--page-margin) * 2));
-  position: sticky;
+  position: fixed;
   top: var(--page-margin);
+  left: var(--page-margin);
   display: flex;
   flex-direction: column;
   padding: 0;
-  overflow-y: auto;
 }
 
 .sidebar-top {
@@ -285,6 +285,7 @@ img { max-width: 100%; display: block; }
 .main {
   flex: 1;
   min-width: 0;
+  margin-left: calc(var(--sidebar-w) + var(--gutter));
   padding: 0 0 72px;
 }
 
@@ -937,7 +938,7 @@ a.venture-deal-card:hover {
     z-index: 140;
   }
 
-  .main { padding: 24px 20px 60px; }
+  .main { margin-left: 0; padding: 24px 20px 60px; }
 
   .product-detail { grid-template-columns: 1fr; gap: 28px; }
 
