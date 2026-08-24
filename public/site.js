@@ -84,6 +84,25 @@ function studioNavHTML(pages) {
   return html;
 }
 
+function sponsorHTML(settings) {
+  if (!settings.sponsor_name) return "";
+  var logo = settings.sponsor_logo_url
+    ? '<img src="' + settings.sponsor_logo_url + '" alt="">'
+    : settings.sponsor_name.charAt(0).toUpperCase();
+  return (
+    '<a class="sidebar-sponsor" href="' + (settings.sponsor_link_url || "#") + '" target="_blank" rel="noopener sponsored">' +
+    '<div class="sponsor-header">' +
+    '<span class="sponsor-logo">' + logo + "</span>" +
+    '<span class="sponsor-title">' +
+    '<span class="sponsor-name">' + settings.sponsor_name + "</span>" +
+    '<span class="sponsor-label">Sponsored</span>' +
+    "</span>" +
+    "</div>" +
+    (settings.sponsor_description ? '<p class="sponsor-desc">' + settings.sponsor_description + "</p>" : "") +
+    "</a>"
+  );
+}
+
 function renderShell(site) {
   var settings = site.settings;
   document.querySelectorAll(".year").forEach(function (el) {
@@ -116,9 +135,8 @@ function renderShell(site) {
       '<div class="nav-group"><h4>Browse</h4>' + browseNavHTML(site.contentTypes) + "</div>" +
       '<div class="nav-group"><h4>Studio</h4>' + studioNavHTML(site.pages) + "</div>" +
       "</nav>" +
+      sponsorHTML(settings) +
       '<div class="sidebar-footer">' +
-      '<p class="sidebar-quote">' + settings.footer_quote + "</p>" +
-      '<a href="hire.html" class="btn btn-primary">Hire Us</a>' +
       '<p class="sidebar-note">' + settings.footer_note + "</p>" +
       '<div class="sidebar-bottom">' +
       "<span>&copy; <span class=\"year\">" + new Date().getFullYear() + "</span> " + settings.copyright_name + "</span>" +

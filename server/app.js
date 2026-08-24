@@ -85,6 +85,17 @@ app.post(
   })
 );
 
+app.post(
+  "/api/admin/upload/sponsor",
+  requireAuth,
+  upload.single("file"),
+  asyncRoute(async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded, or unsupported file type." });
+    const url = await uploadFile("sponsor", req.file);
+    res.json({ url });
+  })
+);
+
 // ---------- Auth ----------
 
 app.post(
@@ -278,7 +289,8 @@ app.put(
     const fields = [
       "site_name", "logo_url", "content_title", "content_description",
       "footer_quote", "footer_note", "copyright_name", "partner_label", "partner_url",
-      "hire_title", "hire_description"
+      "hire_title", "hire_description",
+      "sponsor_name", "sponsor_logo_url", "sponsor_description", "sponsor_link_url"
     ];
     const current = (await query("SELECT * FROM settings WHERE id = 1")).rows[0];
     const next = { ...current, ...req.body };

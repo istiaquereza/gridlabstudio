@@ -144,7 +144,6 @@ function renderSettings() {
       '<div class="form-row"><label>Homepage title</label><input name="content_title" value="' + escapeHTML(s.content_title) + '"></div>' +
       '<div class="form-row"><label>Homepage description</label><input name="content_description" value="' + escapeHTML(s.content_description) + '"></div>' +
       "<h2 style=\"margin-top:24px;\">Footer</h2>" +
-      '<div class="form-row"><label>Footer quote</label><textarea name="footer_quote" rows="2">' + escapeHTML(s.footer_quote) + "</textarea></div>" +
       '<div class="form-row"><label>Footer note</label><input name="footer_note" value="' + escapeHTML(s.footer_note) + '"></div>' +
       '<div class="form-row"><label>Copyright name</label><input name="copyright_name" value="' + escapeHTML(s.copyright_name) + '"></div>' +
       '<div class="form-two">' +
@@ -155,7 +154,29 @@ function renderSettings() {
       '<div class="form-row"><label>Heading</label><input name="hire_title" value="' + escapeHTML(s.hire_title) + '"></div>' +
       '<div class="form-row"><label>Description</label><textarea name="hire_description" rows="2">' + escapeHTML(s.hire_description) + "</textarea></div>" +
       '<button type="submit" class="btn btn-primary" style="margin-top:8px;">Save Settings</button>' +
-      "</form>";
+      "</form>" +
+      '<div class="card">' +
+      "<h2>Sidebar Sponsor</h2>" +
+      '<p class="panel-sub" style="margin-top:-4px;">Shown in the sidebar below the nav. Leave the name blank to hide it.</p>' +
+      '<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">' +
+      '<div class="logo-preview" id="sponsor-logo-preview">' +
+      (s.sponsor_logo_url ? '<img src="' + s.sponsor_logo_url + '" alt="">' : "<span style=\"font-size:11px;color:var(--text-faint)\">No logo</span>") +
+      "</div>" +
+      '<div style="display:flex;flex-direction:column;gap:8px;">' +
+      '<input type="file" id="sponsor-logo-file" accept="image/*">' +
+      '<div style="display:flex;gap:8px;">' +
+      '<button class="btn btn-sm" id="sponsor-logo-upload-btn" type="button">Upload logo</button>' +
+      '<button class="btn btn-sm" id="sponsor-logo-reset-btn" type="button">Remove logo</button>' +
+      "</div>" +
+      "</div>" +
+      "</div>" +
+      '<form id="sponsor-form">' +
+      '<div class="form-row"><label>Sponsor name</label><input name="sponsor_name" value="' + escapeHTML(s.sponsor_name) + '"></div>' +
+      '<div class="form-row"><label>Description</label><textarea name="sponsor_description" rows="2">' + escapeHTML(s.sponsor_description) + "</textarea></div>" +
+      '<div class="form-row"><label>Link URL</label><input name="sponsor_link_url" value="' + escapeHTML(s.sponsor_link_url) + '" placeholder="https://"></div>' +
+      '<button type="submit" class="btn btn-primary" style="margin-top:8px;">Save Sponsor</button>' +
+      "</form>" +
+      "</div>";
 
     document.getElementById("settings-form").addEventListener("submit", function (e) {
       e.preventDefault();
@@ -183,6 +204,37 @@ function renderSettings() {
       api("/api/admin/settings", { method: "PUT", body: { logo_url: null } })
         .then(function () {
           toast("Logo reset to default mark.");
+          renderSettings();
+        })
+        .catch(function (err) { toast(err.message, true); });
+    });
+
+    document.getElementById("sponsor-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var data = Object.fromEntries(new FormData(e.target).entries());
+      api("/api/admin/settings", { method: "PUT", body: data })
+        .then(function () { toast("Sponsor updated."); })
+        .catch(function (err) { toast(err.message, true); });
+    });
+
+    document.getElementById("sponsor-logo-upload-btn").addEventListener("click", function () {
+      var fileInput = document.getElementById("sponsor-logo-file");
+      if (!fileInput.files[0]) return toast("Choose an image file first.", true);
+      var fd = new FormData();
+      fd.append("file", fileInput.files[0]);
+      api("/api/admin/upload/sponsor", { method: "POST", body: fd })
+        .then(function (res) { return api("/api/admin/settings", { method: "PUT", body: { sponsor_logo_url: res.url } }); })
+        .then(function () {
+          toast("Sponsor logo updated.");
+          renderSettings();
+        })
+        .catch(function (err) { toast(err.message, true); });
+    });
+
+    document.getElementById("sponsor-logo-reset-btn").addEventListener("click", function () {
+      api("/api/admin/settings", { method: "PUT", body: { sponsor_logo_url: null } })
+        .then(function () {
+          toast("Sponsor logo removed.");
           renderSettings();
         })
         .catch(function (err) { toast(err.message, true); });

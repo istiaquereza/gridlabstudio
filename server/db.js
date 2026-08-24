@@ -53,7 +53,11 @@ async function initSchema() {
       partner_label TEXT NOT NULL DEFAULT 'Partner with us',
       partner_url TEXT NOT NULL DEFAULT '',
       hire_title TEXT NOT NULL DEFAULT 'Hire the GridLab Studio',
-      hire_description TEXT NOT NULL DEFAULT ''
+      hire_description TEXT NOT NULL DEFAULT '',
+      sponsor_name TEXT NOT NULL DEFAULT '',
+      sponsor_logo_url TEXT,
+      sponsor_description TEXT NOT NULL DEFAULT '',
+      sponsor_link_url TEXT NOT NULL DEFAULT ''
     );
 
     CREATE TABLE IF NOT EXISTS content_types (
@@ -134,6 +138,10 @@ async function initSchema() {
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS category_slug TEXT;`);
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS cover_url TEXT;`);
   await pool.query(`ALTER TABLE ventures ADD COLUMN IF NOT EXISTS cover_url TEXT;`);
+  await pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS sponsor_name TEXT NOT NULL DEFAULT '';`);
+  await pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS sponsor_logo_url TEXT;`);
+  await pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS sponsor_description TEXT NOT NULL DEFAULT '';`);
+  await pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS sponsor_link_url TEXT NOT NULL DEFAULT '';`);
 
   // One-time: gallery images used to be a flat array of URL strings.
   // Upgrade each entry to {url, keyword, caption} so every image can carry
