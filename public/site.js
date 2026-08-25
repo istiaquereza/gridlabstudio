@@ -482,19 +482,19 @@ function initGenericPage(site) {
     .then(function (page) {
       document.title = page.title + " — " + site.settings.site_name + " Design Market";
 
+      var paragraphs = page.body.split(/\n\s*\n/).filter(Boolean);
+
       if (slug === "about") {
         container.innerHTML =
           '<div class="about-hero">' +
           teamAvatarsHTML() +
           '<div class="about-hero-text">' +
-          "<p>GridLab is an independent, global design and development studio operating across Dhaka, Toronto, and New York. Founded by three long-time friends and collaborators, we bring together an international perspective with a deep commitment to craft.</p>" +
-          "<p>We bridge the gap between complex engineering and intuitive user experience. Whether architecting scalable design systems, building modern web applications, or launching brand platforms, we focus on turning tough, ambiguous challenges into seamless digital products that deliver real, measurable impact.</p>" +
+          paragraphs.map(function (p) { return "<p>" + p + "</p>"; }).join("") +
           "</div>" +
           "</div>";
         return;
       }
 
-      var paragraphs = page.body.split(/\n\s*\n/).filter(Boolean);
       container.innerHTML =
         '<div class="page-header"><h1>' + page.title + "</h1></div>" +
         '<div class="page-body">' +
