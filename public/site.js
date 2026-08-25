@@ -512,9 +512,7 @@ function initHirePage(site) {
   var form = document.getElementById("hire-form");
   if (!form) return;
 
-  var titleEl = document.querySelector(".page-header h1");
-  var descEl = document.querySelector(".page-header p");
-  if (titleEl) titleEl.textContent = site.settings.hire_title;
+  var descEl = document.getElementById("hire-desc");
   if (descEl) descEl.textContent = site.settings.hire_description;
 
   form.addEventListener("submit", function (e) {

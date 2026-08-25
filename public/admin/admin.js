@@ -158,7 +158,6 @@ function renderSettings() {
       '<div class="form-row"><label>Partner link URL</label><input name="partner_url" value="' + escapeHTML(s.partner_url) + '"></div>' +
       "</div>" +
       "<h2 style=\"margin-top:24px;\">Hire Us page</h2>" +
-      '<div class="form-row"><label>Heading</label><input name="hire_title" value="' + escapeHTML(s.hire_title) + '"></div>' +
       '<div class="form-row"><label>Description</label><textarea name="hire_description" rows="2">' + escapeHTML(s.hire_description) + "</textarea></div>" +
       '<button type="submit" class="btn btn-primary" style="margin-top:8px;">Save Settings</button>' +
       "</form>" +
