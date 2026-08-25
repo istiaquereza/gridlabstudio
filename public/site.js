@@ -247,16 +247,17 @@ function productClassifierLabel(site, p) {
 }
 
 function productCardHTML(site, p) {
+  var isCraft = p.resource_type === "craft";
   return (
     '<a class="product-card" href="product.html?slug=' + p.slug + '">' +
     '<div class="product-thumb" style="aspect-ratio:' + (p.aspect || "4 / 3") + '">' +
     '<img src="' + p.thumb + '" alt="' + p.name + '" loading="lazy">' +
-    '<span class="product-price-badge">' + formatPrice(p.price) + "</span>" +
+    (isCraft ? "" : '<span class="product-price-badge">' + formatPrice(p.price) + "</span>") +
     "</div>" +
-    '<div class="product-info"><div>' +
+    '<div class="product-info">' +
     '<div class="product-name">' + p.name + "</div>" +
     '<div class="product-cat">' + productClassifierLabel(site, p) + "</div>" +
-    "</div></div>" +
+    "</div>" +
     "</a>"
   );
 }
@@ -283,63 +284,25 @@ function initHomeGrid(site) {
   if (descEl) descEl.textContent = site.settings.content_description;
 
   var pillRow = document.getElementById("pill-row");
-  var subPillRow = document.getElementById("subpill-row");
   var params = new URLSearchParams(window.location.search);
+  // A content-type filter can still arrive via the sidebar's Product links
+  // (index.html?type=slug) — honored for fetching, but the pill row itself
+  // is category-based now, so no pill lights up for a type-only filter.
   var activeType = params.get("type") || "all";
-  var activeCategory = params.get("cat") || "all";
-
-  function renderSubPills() {
-    if (!subPillRow) return;
-    if (activeType === "all") {
-      subPillRow.innerHTML = "";
-      subPillRow.style.display = "none";
-      return;
-    }
-    var categories = site.categories.filter(function (c) { return c.content_type_slug === activeType; });
-    if (!categories.length) {
-      subPillRow.innerHTML = "";
-      subPillRow.style.display = "none";
-      return;
-    }
-    subPillRow.style.display = "";
-    var subPills = [{ slug: "all", name: "All " + typeLabel(site, activeType) }].concat(categories);
-    subPillRow.innerHTML = subPills
-      .map(function (c) {
-        return (
-          '<button class="pill pill-sm' + (c.slug === activeCategory ? " active" : "") + '" data-cat="' + c.slug + '">' +
-          c.name +
-          "</button>"
-        );
-      })
-      .join("");
-    subPillRow.querySelectorAll(".pill").forEach(function (pill) {
-      pill.addEventListener("click", function () {
-        subPillRow.querySelectorAll(".pill").forEach(function (p) { p.classList.remove("active"); });
-        pill.classList.add("active");
-        activeCategory = pill.dataset.cat;
-        var url = new URL(window.location.href);
-        if (activeCategory === "all") url.searchParams.delete("cat");
-        else url.searchParams.set("cat", activeCategory);
-        history.replaceState(null, "", url);
-        load();
-      });
-    });
-  }
+  var activeCategory = params.get("category") || params.get("cat") || "all";
 
   if (pillRow) {
-    var pills = [{ slug: "all", name: "All" }].concat(site.contentTypes);
+    var pills = [{ slug: "all", name: "All" }].concat(site.categories);
     pillRow.innerHTML = pills
       .map(function (c) {
         return (
-          '<button class="pill' + (c.slug === activeType ? " active" : "") + '" data-type="' + c.slug + '">' +
+          '<button class="pill' + (c.slug === activeCategory ? " active" : "") + '" data-cat="' + c.slug + '">' +
           c.name +
           "</button>"
         );
       })
       .join("");
   }
-
-  renderSubPills();
 
   var searchInput = document.getElementById("search-input");
 
@@ -359,14 +322,14 @@ function initHomeGrid(site) {
       pill.addEventListener("click", function () {
         pillRow.querySelectorAll(".pill").forEach(function (p) { p.classList.remove("active"); });
         pill.classList.add("active");
-        activeType = pill.dataset.type;
-        activeCategory = "all";
+        activeCategory = pill.dataset.cat;
+        activeType = "all";
         var url = new URL(window.location.href);
-        if (activeType === "all") url.searchParams.delete("type");
-        else url.searchParams.set("type", activeType);
+        if (activeCategory === "all") url.searchParams.delete("category");
+        else url.searchParams.set("category", activeCategory);
+        url.searchParams.delete("type");
         url.searchParams.delete("cat");
         history.replaceState(null, "", url);
-        renderSubPills();
         load();
       });
     });

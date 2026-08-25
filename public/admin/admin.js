@@ -730,7 +730,7 @@ function renderProducts() {
       "</div><button class=\"btn btn-primary\" id=\"add-product-btn\"" + (contentTypes.length ? "" : " disabled") + ">Add Product</button></div>" +
       (contentTypes.length ? "" : '<p class="panel-sub">Create a content type first (Content Types tab) before adding products.</p>') +
       '<div id="product-form-slot"></div>' +
-      '<div class="card"><table><thead><tr><th></th><th>Name</th><th>Content Type</th><th>Category</th><th>Price</th><th></th></tr></thead><tbody id="products-tbody"></tbody></table></div>';
+      '<div class="card"><table><thead><tr><th></th><th>Name</th><th>Type</th><th>Content Type</th><th>Category</th><th>Price</th><th></th></tr></thead><tbody id="products-tbody"></tbody></table></div>';
 
     document.getElementById("add-product-btn").addEventListener("click", function () {
       showProductForm(null, contentTypes, categories);
@@ -738,19 +738,21 @@ function renderProducts() {
 
     var tbody = document.getElementById("products-tbody");
     if (!products.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty-row">No products yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-row">No products yet.</td></tr>';
       return;
     }
 
     products.forEach(function (p) {
       var cat = categories.find(function (c) { return c.slug === p.category_slug; });
+      var isCraft = p.resource_type === "craft";
       var row = document.createElement("tr");
       row.innerHTML =
         '<td class="thumb-cell">' + (p.thumb ? '<img src="' + p.thumb + '" alt="">' : "") + "</td>" +
         "<td>" + escapeHTML(p.name) + "</td>" +
+        "<td>" + (isCraft ? "Craft" : "Product") + "</td>" +
         "<td>" + escapeHTML(typeName(p.content_type_slug)) + "</td>" +
         "<td>" + escapeHTML(cat ? cat.name : "—") + "</td>" +
-        "<td>$" + p.price + "</td>" +
+        "<td>" + (isCraft ? "—" : "$" + p.price) + "</td>" +
         '<td><div class="row-actions">' +
         '<button class="btn btn-sm" data-action="edit">Edit</button>' +
         '<button class="btn btn-sm btn-danger" data-action="delete">Delete</button>' +
@@ -805,16 +807,22 @@ function showProductForm(product, contentTypes, categories) {
     return '<option value="' + a + '"' + selected + ">" + a + "</option>";
   }).join("");
 
+  var resourceType = product && product.resource_type === "craft" ? "craft" : "product";
+
   slot.innerHTML =
     '<div class="card">' +
     "<h2>" + (isEdit ? "Edit product" : "New product") + "</h2>" +
+    '<div class="form-row"><label>Resource Type</label><select id="pf-resource-type">' +
+    '<option value="product"' + (resourceType === "product" ? " selected" : "") + ">Product</option>" +
+    '<option value="craft"' + (resourceType === "craft" ? " selected" : "") + ">Craft</option>" +
+    "</select></div>" +
     '<div class="form-two">' +
     '<div class="form-row"><label>Name</label><input id="pf-name" value="' + escapeHTML(product ? product.name : "") + '"></div>' +
     '<div class="form-row"><label>Slug</label><input id="pf-slug" value="' + escapeHTML(product ? product.slug : "") + '" placeholder="auto from name"></div>' +
     "</div>" +
     '<div class="form-two">' +
     '<div class="form-row"><label>Content Type</label><select id="pf-type">' + typeOptions + "</select></div>" +
-    '<div class="form-row"><label>Price (USD)</label><input id="pf-price" type="number" min="0" step="1" value="' + (product ? product.price : "") + '"></div>' +
+    '<div class="form-row" id="pf-price-row"><label>Price (USD)</label><input id="pf-price" type="number" min="0" step="1" value="' + (product ? product.price : "") + '"></div>' +
     "</div>" +
     '<div class="form-row"><label>Category (optional)</label>' +
     '<div style="display:flex;gap:8px;align-items:center;">' +
@@ -831,7 +839,7 @@ function showProductForm(product, contentTypes, categories) {
     '<div class="form-row"><label>License</label><input id="pf-license" value="' + escapeHTML(product ? product.license : "Standard License") + '"></div>' +
     "</div>" +
     '<div class="form-row"><label>Aspect ratio</label><select id="pf-aspect">' + aspectOptions + "</select></div>" +
-    '<div class="form-row"><label>Buy link (optional)</label><span class="hint">If set, "Buy Now" sends buyers straight to this URL instead of the built-in checkout email</span><input id="pf-buy-url" value="' + escapeHTML(product ? product.buy_url : "") + '" placeholder="https://gumroad.com/l/your-product"></div>' +
+    '<div class="form-row" id="pf-buy-row"><label>Buy link (optional)</label><span class="hint">If set, "Buy Now" sends buyers straight to this URL instead of the built-in checkout email</span><input id="pf-buy-url" value="' + escapeHTML(product ? product.buy_url : "") + '" placeholder="https://gumroad.com/l/your-product"></div>' +
     '<div class="form-row"><label>Description</label><textarea id="pf-description" rows="4">' + escapeHTML(product ? product.description : "") + "</textarea></div>" +
     '<div class="form-two">' +
     '<div class="form-row"><label>Thumbnail image</label><span class="hint">Shown on marketplace cards</span><input type="file" id="pf-thumb-file" accept="image/*">' +
@@ -925,6 +933,14 @@ function showProductForm(product, contentTypes, categories) {
   renderCoverPreview();
   renderGalleryPreview();
 
+  function applyResourceTypeVisibility() {
+    var isCraft = document.getElementById("pf-resource-type").value === "craft";
+    document.getElementById("pf-price-row").style.display = isCraft ? "none" : "";
+    document.getElementById("pf-buy-row").style.display = isCraft ? "none" : "";
+  }
+  applyResourceTypeVisibility();
+  document.getElementById("pf-resource-type").addEventListener("change", applyResourceTypeVisibility);
+
   document.getElementById("pf-type").addEventListener("change", function (e) {
     document.getElementById("pf-category").innerHTML = categoryOptionsFor(e.target.value);
   });
@@ -1009,6 +1025,7 @@ function showProductForm(product, contentTypes, categories) {
     var body = {
       name: document.getElementById("pf-name").value,
       slug: document.getElementById("pf-slug").value || undefined,
+      resource_type: document.getElementById("pf-resource-type").value,
       type: document.getElementById("pf-type").value,
       category: document.getElementById("pf-category").value || null,
       price: document.getElementById("pf-price").value,

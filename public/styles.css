@@ -393,23 +393,6 @@ img { max-width: 100%; display: block; }
   color: #fcfcfc;
 }
 
-#subpill-row {
-  margin: -6px 0 16px;
-}
-
-.pill-sm {
-  height: 24px;
-  padding: 0 10px;
-  font-size: 12px;
-  background: transparent;
-  border-color: var(--border);
-}
-
-.pill-sm.active {
-  background: var(--surface);
-  border-color: transparent;
-  color: var(--text);
-}
 
 .search-box {
   position: relative;
@@ -507,6 +490,8 @@ img { max-width: 100%; display: block; }
 }
 
 .product-name {
+  flex: 1;
+  min-width: 0;
   font-size: 14px;
   font-weight: 600;
   color: var(--text);
@@ -516,9 +501,9 @@ img { max-width: 100%; display: block; }
 }
 
 .product-cat {
+  flex-shrink: 0;
   font-size: 12px;
   color: var(--text-faint);
-  margin-top: 2px;
 }
 
 .empty-state {

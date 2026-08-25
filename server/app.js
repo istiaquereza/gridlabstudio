@@ -210,7 +210,8 @@ function toPublicProduct(row) {
     description: row.description,
     formats: row.formats,
     license: row.license,
-    buy_url: row.buy_url
+    buy_url: row.buy_url,
+    resource_type: row.resource_type
   };
 }
 
@@ -609,18 +610,19 @@ app.post(
     const b = req.body || {};
     if (!b.name || !b.type) return res.status(400).json({ error: "Name and content type are required." });
     const slug = b.slug ? slugify(b.slug) : slugify(b.name);
+    const resourceType = b.resource_type === "craft" ? "craft" : "product";
     const maxOrder = (await query("SELECT COALESCE(MAX(sort_order), -1) AS m FROM products")).rows[0].m;
     try {
       const row = (
         await query(
-          `INSERT INTO products (slug, name, content_type_slug, category_slug, price, aspect, thumb, cover_url, images, description, formats, license, buy_url, sort_order)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+          `INSERT INTO products (slug, name, content_type_slug, category_slug, price, aspect, thumb, cover_url, images, description, formats, license, buy_url, resource_type, sort_order)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
           [
             slug,
             b.name,
             b.type,
             b.category || null,
-            Number(b.price) || 0,
+            resourceType === "craft" ? 0 : Number(b.price) || 0,
             b.aspect || "4 / 3",
             b.thumb || null,
             b.cover || null,
@@ -628,7 +630,8 @@ app.post(
             b.description || "",
             b.formats || "",
             b.license || "Standard License",
-            b.buy_url || "",
+            resourceType === "craft" ? "" : b.buy_url || "",
+            resourceType,
             maxOrder + 1
           ]
         )
@@ -648,12 +651,15 @@ app.put(
     const current = (await query("SELECT * FROM products WHERE id = $1", [req.params.id])).rows[0];
     if (!current) return res.status(404).json({ error: "Not found." });
     const b = req.body || {};
+    const resourceType = b.resource_type !== undefined
+      ? (b.resource_type === "craft" ? "craft" : "product")
+      : current.resource_type;
     const next = {
       slug: b.slug ? slugify(b.slug) : current.slug,
       name: b.name ?? current.name,
       content_type_slug: b.type ?? current.content_type_slug,
       category_slug: b.category !== undefined ? (b.category || null) : current.category_slug,
-      price: b.price !== undefined ? Number(b.price) : current.price,
+      price: resourceType === "craft" ? 0 : (b.price !== undefined ? Number(b.price) : current.price),
       aspect: b.aspect ?? current.aspect,
       thumb: b.thumb !== undefined ? b.thumb : current.thumb,
       cover_url: b.cover !== undefined ? b.cover : current.cover_url,
@@ -661,16 +667,18 @@ app.put(
       description: b.description ?? current.description,
       formats: b.formats ?? current.formats,
       license: b.license ?? current.license,
-      buy_url: b.buy_url ?? current.buy_url
+      buy_url: resourceType === "craft" ? "" : (b.buy_url ?? current.buy_url),
+      resource_type: resourceType
     };
     try {
       const row = (
         await query(
           `UPDATE products SET slug=$1, name=$2, content_type_slug=$3, category_slug=$4, price=$5, aspect=$6,
-           thumb=$7, cover_url=$8, images=$9, description=$10, formats=$11, license=$12, buy_url=$13 WHERE id=$14 RETURNING *`,
+           thumb=$7, cover_url=$8, images=$9, description=$10, formats=$11, license=$12, buy_url=$13, resource_type=$14 WHERE id=$15 RETURNING *`,
           [
             next.slug, next.name, next.content_type_slug, next.category_slug, next.price, next.aspect,
-            next.thumb, next.cover_url, next.images, next.description, next.formats, next.license, next.buy_url, req.params.id
+            next.thumb, next.cover_url, next.images, next.description, next.formats, next.license, next.buy_url,
+            next.resource_type, req.params.id
           ]
         )
       ).rows[0];
