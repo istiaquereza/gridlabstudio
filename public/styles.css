@@ -802,6 +802,27 @@ a.venture-deal-card:hover {
   margin: 0;
 }
 
+.page-body + .page-body { margin-top: 16px; }
+
+.team-avatars {
+  display: flex;
+  margin: 4px 0 4px -6px;
+}
+
+.team-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 3px solid var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -14px;
+  flex-shrink: 0;
+}
+
+.team-avatar svg { width: 22px; height: 22px; }
+
 .form-card {
   max-width: 560px;
   border: 1px solid var(--border);

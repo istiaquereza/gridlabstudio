@@ -443,6 +443,26 @@ function initProductDetail(site) {
 
 // ---------- Page: page.html (generic CMS page) ----------
 
+function teamAvatarsHTML() {
+  var colors = ["#c6ff5e", "#7ee8fa", "#ffb86b"];
+  return (
+    '<div class="team-avatars">' +
+    colors
+      .map(function (bg) {
+        return (
+          '<span class="team-avatar" style="background:' + bg + '">' +
+          '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+          '<circle cx="12" cy="8.5" r="4" fill="rgba(0,0,0,0.55)"/>' +
+          '<path d="M4 20.5c0-4.4 3.6-7 8-7s8 2.6 8 7" fill="rgba(0,0,0,0.55)"/>' +
+          "</svg>" +
+          "</span>"
+        );
+      })
+      .join("") +
+    "</div>"
+  );
+}
+
 function initGenericPage(site) {
   var container = document.getElementById("page-content");
   if (!container) return;
@@ -458,11 +478,30 @@ function initGenericPage(site) {
     .then(function (page) {
       document.title = page.title + " — " + site.settings.site_name + " Design Market";
       var paragraphs = page.body.split(/\n\s*\n/).filter(Boolean);
-      container.innerHTML =
-        '<div class="page-header"><h1>' + page.title + "</h1></div>" +
-        '<div class="page-body">' +
-        paragraphs.map(function (p) { return "<p>" + p + "</p>"; }).join("") +
-        "</div>";
+      var bodyHTML;
+
+      if (slug === "about" && paragraphs.length) {
+        var intro = "<p>" + paragraphs[0] + "</p>";
+        var rest = paragraphs
+          .slice(1)
+          .map(function (p) { return "<p>" + p + "</p>"; })
+          .join("");
+        bodyHTML =
+          '<div class="page-body">' + intro + "</div>" +
+          teamAvatarsHTML() +
+          '<div class="page-body team-intro">' +
+          "<p>GridLab is an independent, global design and development studio operating across Dhaka, Toronto, and New York. Founded by three long-time friends and collaborators, we bring together an international perspective with a deep commitment to craft.</p>" +
+          "<p>We bridge the gap between complex engineering and intuitive user experience. Whether architecting scalable design systems, building modern web applications, or launching brand platforms, we focus on turning tough, ambiguous challenges into seamless digital products that deliver real, measurable impact.</p>" +
+          "</div>" +
+          '<div class="page-body">' + rest + "</div>";
+      } else {
+        bodyHTML =
+          '<div class="page-body">' +
+          paragraphs.map(function (p) { return "<p>" + p + "</p>"; }).join("") +
+          "</div>";
+      }
+
+      container.innerHTML = '<div class="page-header"><h1>' + page.title + "</h1></div>" + bodyHTML;
     })
     .catch(function () {
       container.innerHTML = '<div class="empty-state">This page could not be found.</div>';
