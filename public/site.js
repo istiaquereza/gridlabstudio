@@ -444,16 +444,20 @@ function initProductDetail(site) {
 // ---------- Page: page.html (generic CMS page) ----------
 
 function teamAvatarsHTML() {
-  var colors = ["#c6ff5e", "#7ee8fa", "#ffb86b"];
+  var avatars = [
+    { skin: "#f2c49b", hair: "#c0392b" },
+    { skin: "#d8d8d8", hair: "#8a8a8a" },
+    { skin: "#f0b884", hair: "#2b5fa8" }
+  ];
   return (
     '<div class="team-avatars">' +
-    colors
-      .map(function (bg) {
+    avatars
+      .map(function (a) {
         return (
-          '<span class="team-avatar" style="background:' + bg + '">' +
-          '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
-          '<circle cx="12" cy="8.5" r="4" fill="rgba(0,0,0,0.55)"/>' +
-          '<path d="M4 20.5c0-4.4 3.6-7 8-7s8 2.6 8 7" fill="rgba(0,0,0,0.55)"/>' +
+          '<span class="team-avatar">' +
+          '<svg viewBox="0 0 64 64" aria-hidden="true">' +
+          '<circle cx="32" cy="32" r="32" fill="' + a.skin + '"/>' +
+          '<path d="M0 24a32 32 0 0 1 64 0v8H0z" fill="' + a.hair + '"/>' +
           "</svg>" +
           "</span>"
         );
@@ -477,31 +481,25 @@ function initGenericPage(site) {
     })
     .then(function (page) {
       document.title = page.title + " — " + site.settings.site_name + " Design Market";
-      var paragraphs = page.body.split(/\n\s*\n/).filter(Boolean);
-      var bodyHTML;
 
-      if (slug === "about" && paragraphs.length) {
-        var intro = "<p>" + paragraphs[0] + "</p>";
-        var rest = paragraphs
-          .slice(1)
-          .map(function (p) { return "<p>" + p + "</p>"; })
-          .join("");
-        bodyHTML =
-          '<div class="page-body">' + intro + "</div>" +
+      if (slug === "about") {
+        container.innerHTML =
+          '<div class="about-hero">' +
           teamAvatarsHTML() +
-          '<div class="page-body team-intro">' +
+          '<div class="about-hero-text">' +
           "<p>GridLab is an independent, global design and development studio operating across Dhaka, Toronto, and New York. Founded by three long-time friends and collaborators, we bring together an international perspective with a deep commitment to craft.</p>" +
           "<p>We bridge the gap between complex engineering and intuitive user experience. Whether architecting scalable design systems, building modern web applications, or launching brand platforms, we focus on turning tough, ambiguous challenges into seamless digital products that deliver real, measurable impact.</p>" +
           "</div>" +
-          '<div class="page-body">' + rest + "</div>";
-      } else {
-        bodyHTML =
-          '<div class="page-body">' +
-          paragraphs.map(function (p) { return "<p>" + p + "</p>"; }).join("") +
           "</div>";
+        return;
       }
 
-      container.innerHTML = '<div class="page-header"><h1>' + page.title + "</h1></div>" + bodyHTML;
+      var paragraphs = page.body.split(/\n\s*\n/).filter(Boolean);
+      container.innerHTML =
+        '<div class="page-header"><h1>' + page.title + "</h1></div>" +
+        '<div class="page-body">' +
+        paragraphs.map(function (p) { return "<p>" + p + "</p>"; }).join("") +
+        "</div>";
     })
     .catch(function () {
       container.innerHTML = '<div class="empty-state">This page could not be found.</div>';
