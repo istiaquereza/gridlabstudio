@@ -191,8 +191,7 @@ function initMobileNav() {
 }
 
 var CLOCK_ZONES = [
-  { city: "Toronto", tz: "America/Toronto" },
-  { city: "New York", tz: "America/New_York" }
+  { city: "Toronto", tz: "America/Toronto" }
 ];
 
 function zoneTimeInfo(tz) {
