@@ -553,6 +553,20 @@ function ventureLogoHTML(v) {
     : '<div class="venture-logo-fallback">' + v.name.charAt(0) + "</div>";
 }
 
+function heroVentureCardHTML(v) {
+  var cover = v.cover || v.logo || "";
+  var inner =
+    (cover ? '<img class="venture-hero-img" src="' + cover + '" alt="' + v.name + '">' : "") +
+    '<div class="venture-hero-scrim"></div>' +
+    '<div class="venture-hero-meta">' +
+    '<div class="venture-hero-name">' + v.name + "</div>" +
+    (v.category ? '<div class="venture-hero-category">' + v.category + "</div>" : "") +
+    "</div>";
+  return v.link
+    ? '<a class="venture-hero-card" href="' + v.link + '" target="_blank" rel="noopener">' + inner + "</a>"
+    : '<div class="venture-hero-card">' + inner + "</div>";
+}
+
 function serviceCardHTML(v) {
   var cover = v.cover || v.logo;
   var inner =
@@ -580,8 +594,10 @@ function serviceCardHTML(v) {
 }
 
 function initVenturesPage(site) {
+  var heroEl = document.getElementById("ventures-hero");
   var gridEl = document.getElementById("ventures-grid");
-  if (!gridEl) return;
+  var servicesSection = document.getElementById("services-section");
+  if (!heroEl || !gridEl) return;
 
   var prevBtn = document.getElementById("services-prev");
   var nextBtn = document.getElementById("services-next");
@@ -606,11 +622,17 @@ function initVenturesPage(site) {
     .then(function (r) { return r.json(); })
     .then(function (ventures) {
       if (!ventures.length) {
-        gridEl.innerHTML = '<div class="empty-state">No services yet.</div>';
+        heroEl.innerHTML = '<div class="empty-state">No services yet.</div>';
         return;
       }
-      gridEl.innerHTML = ventures.map(serviceCardHTML).join("");
-      updateArrows();
+      var hero = ventures.slice(0, 2);
+      var rest = ventures.slice(2);
+      heroEl.innerHTML = hero.map(heroVentureCardHTML).join("");
+      if (rest.length) {
+        if (servicesSection) servicesSection.style.display = "";
+        gridEl.innerHTML = rest.map(serviceCardHTML).join("");
+        updateArrows();
+      }
     });
 }
 

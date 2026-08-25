@@ -530,6 +530,55 @@ img { max-width: 100%; display: block; }
 
 /* ---------- Services (ventures) ---------- */
 
+.venture-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.venture-hero-card {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface);
+  display: block;
+}
+
+.venture-hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.venture-hero-card:hover .venture-hero-img { transform: scale(1.03); }
+
+.venture-hero-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0) 55%);
+}
+
+.venture-hero-meta {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 16px;
+  color: #fff;
+}
+
+.venture-hero-name { font-size: 16px; font-weight: 600; }
+
+.venture-hero-category {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 2px;
+}
+
 .carousel-nav {
   display: flex;
   gap: 8px;
