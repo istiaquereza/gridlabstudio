@@ -41,13 +41,19 @@ function currentPath() {
   return window.location.pathname.split("/").pop() || "index.html";
 }
 
+function feedNavHTML() {
+  var params = new URLSearchParams(window.location.search);
+  var activeType = params.get("type") || (currentPath() === "index.html" ? "all" : null);
+  var isActive = currentPath() === "index.html" && activeType === "all";
+  return '<a href="index.html?type=all" class="nav-link' + (isActive ? " active" : "") + '" data-type="all">Feed</a>';
+}
+
 function browseNavHTML(contentTypes) {
   var params = new URLSearchParams(window.location.search);
   var activeType = params.get("type") || (currentPath() === "index.html" ? "all" : null);
   var path = currentPath();
 
-  var items = [{ slug: "all", name: "Feed" }].concat(contentTypes);
-  return items
+  return contentTypes
     .map(function (c) {
       var isActive = path === "index.html" && activeType === c.slug;
       return (
@@ -132,6 +138,7 @@ function renderShell(site) {
       '<button class="btn" data-login>Log in</button>' +
       "</div>" +
       '<nav class="sidebar-nav">' +
+      '<div class="nav-group">' + feedNavHTML() + "</div>" +
       '<div class="nav-group"><h4>Browse</h4>' + browseNavHTML(site.contentTypes) + "</div>" +
       '<div class="nav-group"><h4>Studio</h4>' + studioNavHTML(site.pages) + "</div>" +
       "</nav>" +
