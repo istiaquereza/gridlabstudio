@@ -190,7 +190,8 @@ app.get(
         logo: r.logo_url,
         cover: r.cover_url,
         description: r.description,
-        link: r.link_url
+        link: r.link_url,
+        offer_text: r.offer_text
       }))
     );
   })
@@ -523,9 +524,9 @@ app.post(
     try {
       const row = (
         await query(
-          `INSERT INTO ventures (slug, name, category, logo_url, cover_url, description, link_url, sort_order)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-          [slug, b.name, b.category || "", b.logo || null, b.cover || null, b.description || "", b.link || "", maxOrder + 1]
+          `INSERT INTO ventures (slug, name, category, logo_url, cover_url, description, link_url, offer_text, sort_order)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+          [slug, b.name, b.category || "", b.logo || null, b.cover || null, b.description || "", b.link || "", b.offer || "", maxOrder + 1]
         )
       ).rows[0];
       res.json(row);
@@ -550,13 +551,14 @@ app.put(
       logo_url: b.logo !== undefined ? b.logo : current.logo_url,
       cover_url: b.cover !== undefined ? b.cover : current.cover_url,
       description: b.description ?? current.description,
-      link_url: b.link ?? current.link_url
+      link_url: b.link ?? current.link_url,
+      offer_text: b.offer ?? current.offer_text
     };
     try {
       const row = (
         await query(
-          `UPDATE ventures SET slug=$1, name=$2, category=$3, logo_url=$4, cover_url=$5, description=$6, link_url=$7 WHERE id=$8 RETURNING *`,
-          [next.slug, next.name, next.category, next.logo_url, next.cover_url, next.description, next.link_url, req.params.id]
+          `UPDATE ventures SET slug=$1, name=$2, category=$3, logo_url=$4, cover_url=$5, description=$6, link_url=$7, offer_text=$8 WHERE id=$9 RETURNING *`,
+          [next.slug, next.name, next.category, next.logo_url, next.cover_url, next.description, next.link_url, next.offer_text, req.params.id]
         )
       ).rows[0];
       res.json(row);

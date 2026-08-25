@@ -105,6 +105,7 @@ async function initSchema() {
       cover_url TEXT,
       description TEXT NOT NULL DEFAULT '',
       link_url TEXT NOT NULL DEFAULT '',
+      offer_text TEXT NOT NULL DEFAULT '',
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
@@ -146,6 +147,7 @@ async function initSchema() {
   await pool.query(`ALTER TABLE settings ADD COLUMN IF NOT EXISTS sponsor_link_url TEXT NOT NULL DEFAULT '';`);
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS buy_url TEXT NOT NULL DEFAULT '';`);
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS resource_type TEXT NOT NULL DEFAULT 'product';`);
+  await pool.query(`ALTER TABLE ventures ADD COLUMN IF NOT EXISTS offer_text TEXT NOT NULL DEFAULT '';`);
 
   // One-time: gallery images used to be a flat array of URL strings.
   // Upgrade each entry to {url, keyword, caption} so every image can carry

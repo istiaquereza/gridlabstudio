@@ -528,71 +528,68 @@ img { max-width: 100%; display: block; }
   font-size: 14px;
 }
 
-/* ---------- Ventures ---------- */
+/* ---------- Services (ventures) ---------- */
 
-.venture-hero-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
-  margin-bottom: 40px;
+.carousel-nav {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-.venture-hero-card {
-  position: relative;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: var(--surface);
-  display: block;
+.carousel-arrow {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 
-.venture-hero-img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.35s ease;
+.carousel-arrow:hover:not(:disabled) {
+  color: var(--text);
+  border-color: rgba(0, 0, 0, 0.18);
 }
 
-.venture-hero-card:hover .venture-hero-img { transform: scale(1.03); }
-
-.venture-hero-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0) 55%);
-}
-
-.venture-hero-meta {
-  position: absolute;
-  left: 18px;
-  right: 18px;
-  bottom: 16px;
-  color: #fff;
-}
-
-.venture-hero-name { font-size: 16px; font-weight: 600; }
-
-.venture-hero-category {
-  font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.75);
-  margin-top: 2px;
-}
+.carousel-arrow:disabled { opacity: 0.35; cursor: default; }
 
 .related-section h2 { font-size: 15px; font-weight: 600; margin: 0 0 16px; }
 
 .venture-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 20px 16px;
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding-bottom: 4px;
 }
+
+.venture-grid::-webkit-scrollbar { display: none; }
 
 .venture-deal-card {
   display: block;
+  flex: 0 0 calc(100% - 32px);
+  scroll-snap-align: start;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
   transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+@media (min-width: 640px) {
+  .venture-deal-card { flex-basis: calc((100% - 16px) / 2); }
+}
+
+@media (min-width: 1024px) {
+  .venture-deal-card { flex-basis: calc((100% - 32px) / 3); }
+}
+
+@media (min-width: 1280px) {
+  .venture-deal-card { flex-basis: calc((100% - 48px) / 4); }
 }
 
 a.venture-deal-card:hover {
@@ -619,12 +616,25 @@ a.venture-deal-card:hover {
   line-height: 1.5;
   color: var(--text-secondary);
   margin: 8px 0 0;
-  padding: 0 14px 14px;
+  padding: 0 14px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+.venture-offer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 0 14px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #7c3aed;
+}
+
+.venture-offer svg { flex-shrink: 0; }
 
 .venture-logo {
   width: 32px;

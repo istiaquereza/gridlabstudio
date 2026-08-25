@@ -564,9 +564,9 @@ function renderVentures() {
   api("/api/admin/ventures").then(function (ventures) {
     el.innerHTML =
       '<div class="section-head"><div>' +
-      "<h1>Ventures</h1>" +
-      '<p class="panel-sub" style="margin-bottom:0;">Shown on the public Ventures page under Studio.</p>' +
-      "</div><button class=\"btn btn-primary\" id=\"add-venture-btn\">Add Venture</button></div>" +
+      "<h1>Services</h1>" +
+      '<p class="panel-sub" style="margin-bottom:0;">Shown on the public Services page under Studio.</p>' +
+      "</div><button class=\"btn btn-primary\" id=\"add-venture-btn\">Add Service</button></div>" +
       '<div id="venture-form-slot"></div>' +
       '<div class="card"><table><thead><tr><th></th><th>Name</th><th>Category</th><th></th></tr></thead><tbody id="ventures-tbody"></tbody></table></div>';
 
@@ -576,7 +576,7 @@ function renderVentures() {
 
     var tbody = document.getElementById("ventures-tbody");
     if (!ventures.length) {
-      tbody.innerHTML = '<tr><td colspan="4" class="empty-row">No ventures yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-row">No services yet.</td></tr>';
       return;
     }
 
@@ -616,7 +616,7 @@ function showVentureForm(venture) {
 
   slot.innerHTML =
     '<div class="card">' +
-    "<h2>" + (isEdit ? "Edit venture" : "New venture") + "</h2>" +
+    "<h2>" + (isEdit ? "Edit service" : "New service") + "</h2>" +
     '<div class="form-two">' +
     '<div class="form-row"><label>Name</label><input id="vf-name" value="' + escapeHTML(venture ? venture.name : "") + '"></div>' +
     '<div class="form-row"><label>Slug</label><input id="vf-slug" value="' + escapeHTML(venture ? venture.slug : "") + '" placeholder="auto from name"></div>' +
@@ -626,6 +626,7 @@ function showVentureForm(venture) {
     '<div class="form-row"><label>Link URL</label><input id="vf-link" value="' + escapeHTML(venture ? venture.link_url : "") + '" placeholder="https://..."></div>' +
     "</div>" +
     '<div class="form-row"><label>Description</label><textarea id="vf-description" rows="3">' + escapeHTML(venture ? venture.description : "") + "</textarea></div>" +
+    '<div class="form-row"><label>Tagline / offer (optional)</label><span class="hint">Shown at the bottom of the card, e.g. "20% off first year"</span><input id="vf-offer" value="' + escapeHTML(venture ? venture.offer_text : "") + '" placeholder="3 months free"></div>' +
     '<div class="form-two">' +
     '<div class="form-row"><label>Logo image (small icon)</label><input type="file" id="vf-logo-file" accept="image/*">' +
     '<div id="vf-logo-preview" style="margin-top:6px;"></div></div>' +
@@ -633,7 +634,7 @@ function showVentureForm(venture) {
     '<div id="vf-cover-preview" style="margin-top:6px;"></div></div>' +
     "</div>" +
     '<div style="display:flex;gap:8px;margin-top:8px;">' +
-    '<button class="btn btn-primary" id="vf-save">' + (isEdit ? "Save Changes" : "Create Venture") + "</button>" +
+    '<button class="btn btn-primary" id="vf-save">' + (isEdit ? "Save Changes" : "Create Service") + "</button>" +
     '<button class="btn" id="vf-cancel">Cancel</button>' +
     "</div>" +
     "</div>";
@@ -684,6 +685,7 @@ function showVentureForm(venture) {
       category: document.getElementById("vf-category").value,
       link: document.getElementById("vf-link").value,
       description: document.getElementById("vf-description").value,
+      offer: document.getElementById("vf-offer").value,
       logo: logoUrl,
       cover: coverUrl
     };
@@ -695,7 +697,7 @@ function showVentureForm(venture) {
 
     request
       .then(function () {
-        toast(isEdit ? "Venture updated." : "Venture created.");
+        toast(isEdit ? "Service updated." : "Service created.");
         renderVentures();
       })
       .catch(function (err) { toast(err.message, true); });

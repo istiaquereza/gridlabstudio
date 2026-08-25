@@ -74,7 +74,7 @@ function studioNavHTML(pages) {
   var venturesActive = path === "ventures.html";
   var html =
     '<a href="hire.html" class="nav-link' + (hireActive ? " active" : "") + '">Hire Us</a>' +
-    '<a href="ventures.html" class="nav-link' + (venturesActive ? " active" : "") + '">Ventures</a>';
+    '<a href="ventures.html" class="nav-link' + (venturesActive ? " active" : "") + '">Services</a>';
 
   html += pages
     .map(function (p) {
@@ -553,21 +553,7 @@ function ventureLogoHTML(v) {
     : '<div class="venture-logo-fallback">' + v.name.charAt(0) + "</div>";
 }
 
-function heroVentureCardHTML(v) {
-  var cover = v.cover || v.logo || "";
-  var inner =
-    (cover ? '<img class="venture-hero-img" src="' + cover + '" alt="' + v.name + '">' : "") +
-    '<div class="venture-hero-scrim"></div>' +
-    '<div class="venture-hero-meta">' +
-    '<div class="venture-hero-name">' + v.name + "</div>" +
-    (v.category ? '<div class="venture-hero-category">' + v.category + "</div>" : "") +
-    "</div>";
-  return v.link
-    ? '<a class="venture-hero-card" href="' + v.link + '" target="_blank" rel="noopener">' + inner + "</a>"
-    : '<div class="venture-hero-card">' + inner + "</div>";
-}
-
-function dealVentureCardHTML(v) {
+function serviceCardHTML(v) {
   var cover = v.cover || v.logo;
   var inner =
     '<div class="venture-deal-img">' +
@@ -580,32 +566,51 @@ function dealVentureCardHTML(v) {
     (v.category ? '<div class="venture-category">' + v.category + "</div>" : "") +
     "</div>" +
     "</div>" +
-    (v.description ? '<p class="venture-desc">' + v.description + "</p>" : "");
+    (v.description ? '<p class="venture-desc">' + v.description + "</p>" : "") +
+    (v.offer_text
+      ? '<div class="venture-offer">' +
+        '<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0l2.163 4.985 5.431.472-4.108 3.593L12.7 15 8 11.9 3.3 15l1.214-5.95L.406 5.457l5.431-.472z"/></svg>' +
+        "<span>" + v.offer_text + "</span>" +
+        "</div>"
+      : "") +
+    "</div>";
   return v.link
     ? '<a class="venture-deal-card" href="' + v.link + '" target="_blank" rel="noopener">' + inner + "</a>"
     : '<div class="venture-deal-card">' + inner + "</div>";
 }
 
 function initVenturesPage(site) {
-  var heroEl = document.getElementById("ventures-hero");
   var gridEl = document.getElementById("ventures-grid");
-  var dealsHeading = document.getElementById("ventures-deals-heading");
-  if (!heroEl || !gridEl) return;
+  if (!gridEl) return;
+
+  var prevBtn = document.getElementById("services-prev");
+  var nextBtn = document.getElementById("services-next");
+
+  function updateArrows() {
+    if (!prevBtn || !nextBtn) return;
+    prevBtn.disabled = gridEl.scrollLeft <= 4;
+    nextBtn.disabled = gridEl.scrollLeft >= gridEl.scrollWidth - gridEl.clientWidth - 4;
+  }
+
+  function scrollByCards(dir) {
+    var card = gridEl.querySelector(".venture-deal-card");
+    var step = card ? card.getBoundingClientRect().width + 16 : gridEl.clientWidth;
+    gridEl.scrollBy({ left: dir * step * 4, behavior: "smooth" });
+  }
+
+  if (prevBtn) prevBtn.addEventListener("click", function () { scrollByCards(-1); });
+  if (nextBtn) nextBtn.addEventListener("click", function () { scrollByCards(1); });
+  gridEl.addEventListener("scroll", updateArrows);
 
   fetch("/api/ventures")
     .then(function (r) { return r.json(); })
     .then(function (ventures) {
       if (!ventures.length) {
-        heroEl.innerHTML = '<div class="empty-state">No ventures yet.</div>';
+        gridEl.innerHTML = '<div class="empty-state">No services yet.</div>';
         return;
       }
-      var hero = ventures.slice(0, 2);
-      var rest = ventures.slice(2);
-      heroEl.innerHTML = hero.map(heroVentureCardHTML).join("");
-      if (rest.length) {
-        if (dealsHeading) dealsHeading.style.display = "";
-        gridEl.innerHTML = rest.map(dealVentureCardHTML).join("");
-      }
+      gridEl.innerHTML = ventures.map(serviceCardHTML).join("");
+      updateArrows();
     });
 }
 

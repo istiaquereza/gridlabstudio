@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ventures — GridLab Design Market</title>
+<title>Services — GridLab Design Market</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%230a0b0d%22/><rect x=%2222%22 y=%2222%22 width=%2222%22 height=%2222%22 fill=%22%23c6ff5e%22/><rect x=%2256%22 y=%2256%22 width=%2222%22 height=%2222%22 fill=%22%23c6ff5e%22/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=23">
+<link rel="stylesheet" href="styles.css?v=24">
 </head>
 <body>
 
@@ -21,15 +21,17 @@
   <main class="main">
     <div class="content-header">
       <div class="content-header-line">
-        <h1>Ventures</h1>
-        <p>Companies and projects built by the GridLab studio.</p>
+        <h1>Services</h1>
+        <p>Products and tools built or recommended by the GridLab studio.</p>
       </div>
-    </div>
-
-    <div class="venture-hero-grid" id="ventures-hero"></div>
-
-    <div class="related-section" id="ventures-deals-heading" style="display:none;">
-      <h2>More Ventures</h2>
+      <div class="carousel-nav">
+        <button class="carousel-arrow" id="services-prev" aria-label="Previous">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="carousel-arrow" id="services-next" aria-label="Next">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
     </div>
 
     <div class="venture-grid" id="ventures-grid"></div>
@@ -37,6 +39,6 @@
 
 </div>
 
-<script src="site.js?v=21"></script>
+<script src="site.js?v=22"></script>
 </body>
 </html>
