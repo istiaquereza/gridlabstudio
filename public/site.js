@@ -46,7 +46,7 @@ function browseNavHTML(contentTypes) {
   var activeType = params.get("type") || (currentPath() === "index.html" ? "all" : null);
   var path = currentPath();
 
-  var items = [{ slug: "all", name: "All Design" }].concat(contentTypes);
+  var items = [{ slug: "all", name: "Feed" }].concat(contentTypes);
   return items
     .map(function (c) {
       var isActive = path === "index.html" && activeType === c.slug;
