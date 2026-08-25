@@ -138,8 +138,8 @@ function renderShell(site) {
       '<button class="btn" data-login>Log in</button>' +
       "</div>" +
       '<nav class="sidebar-nav">' +
-      '<div class="nav-group">' + feedNavHTML() + "</div>" +
-      '<div class="nav-group"><h4>Browse</h4>' + browseNavHTML(site.contentTypes) + "</div>" +
+      '<div class="nav-group"><h4>Browse</h4>' + feedNavHTML() + "</div>" +
+      '<div class="nav-group"><h4>Product</h4>' + browseNavHTML(site.contentTypes) + "</div>" +
       '<div class="nav-group"><h4>Studio</h4>' + studioNavHTML(site.pages) + "</div>" +
       "</nav>" +
       sponsorHTML(settings) +
