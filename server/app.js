@@ -209,7 +209,8 @@ function toPublicProduct(row) {
     images: JSON.parse(row.images || "[]"),
     description: row.description,
     formats: row.formats,
-    license: row.license
+    license: row.license,
+    buy_url: row.buy_url
   };
 }
 
@@ -612,8 +613,8 @@ app.post(
     try {
       const row = (
         await query(
-          `INSERT INTO products (slug, name, content_type_slug, category_slug, price, aspect, thumb, cover_url, images, description, formats, license, sort_order)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+          `INSERT INTO products (slug, name, content_type_slug, category_slug, price, aspect, thumb, cover_url, images, description, formats, license, buy_url, sort_order)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
           [
             slug,
             b.name,
@@ -627,6 +628,7 @@ app.post(
             b.description || "",
             b.formats || "",
             b.license || "Standard License",
+            b.buy_url || "",
             maxOrder + 1
           ]
         )
@@ -658,16 +660,17 @@ app.put(
       images: b.images !== undefined ? JSON.stringify(b.images) : current.images,
       description: b.description ?? current.description,
       formats: b.formats ?? current.formats,
-      license: b.license ?? current.license
+      license: b.license ?? current.license,
+      buy_url: b.buy_url ?? current.buy_url
     };
     try {
       const row = (
         await query(
           `UPDATE products SET slug=$1, name=$2, content_type_slug=$3, category_slug=$4, price=$5, aspect=$6,
-           thumb=$7, cover_url=$8, images=$9, description=$10, formats=$11, license=$12 WHERE id=$13 RETURNING *`,
+           thumb=$7, cover_url=$8, images=$9, description=$10, formats=$11, license=$12, buy_url=$13 WHERE id=$14 RETURNING *`,
           [
             next.slug, next.name, next.content_type_slug, next.category_slug, next.price, next.aspect,
-            next.thumb, next.cover_url, next.images, next.description, next.formats, next.license, req.params.id
+            next.thumb, next.cover_url, next.images, next.description, next.formats, next.license, next.buy_url, req.params.id
           ]
         )
       ).rows[0];

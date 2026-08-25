@@ -831,6 +831,7 @@ function showProductForm(product, contentTypes, categories) {
     '<div class="form-row"><label>License</label><input id="pf-license" value="' + escapeHTML(product ? product.license : "Standard License") + '"></div>' +
     "</div>" +
     '<div class="form-row"><label>Aspect ratio</label><select id="pf-aspect">' + aspectOptions + "</select></div>" +
+    '<div class="form-row"><label>Buy link (optional)</label><span class="hint">If set, "Buy Now" sends buyers straight to this URL instead of the built-in checkout email</span><input id="pf-buy-url" value="' + escapeHTML(product ? product.buy_url : "") + '" placeholder="https://gumroad.com/l/your-product"></div>' +
     '<div class="form-row"><label>Description</label><textarea id="pf-description" rows="4">' + escapeHTML(product ? product.description : "") + "</textarea></div>" +
     '<div class="form-two">' +
     '<div class="form-row"><label>Thumbnail image</label><span class="hint">Shown on marketplace cards</span><input type="file" id="pf-thumb-file" accept="image/*">' +
@@ -1013,6 +1014,7 @@ function showProductForm(product, contentTypes, categories) {
       price: document.getElementById("pf-price").value,
       formats: document.getElementById("pf-formats").value,
       license: document.getElementById("pf-license").value,
+      buy_url: document.getElementById("pf-buy-url").value.trim(),
       aspect: document.getElementById("pf-aspect").value,
       description: document.getElementById("pf-description").value,
       thumb: thumbUrl || (firstImage && firstImage.url) || null,

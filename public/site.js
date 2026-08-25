@@ -419,13 +419,21 @@ function initProductDetail(site) {
       });
 
       var buyBtn = document.getElementById("buy-btn");
+      var buyNote = document.querySelector(".buy-note");
       if (buyBtn) {
-        var subject = encodeURIComponent("Purchase request: " + product.name);
-        var body = encodeURIComponent(
-          "Hi " + site.settings.site_name + ",\n\nI'd like to purchase \"" + product.name + "\" (" +
-          formatPrice(product.price) + ").\n\nPlease send payment instructions.\n"
-        );
-        buyBtn.href = "mailto:hello@gridlab.co?subject=" + subject + "&body=" + body;
+        if (product.buy_url) {
+          buyBtn.href = product.buy_url;
+          buyBtn.target = "_blank";
+          buyBtn.rel = "noopener";
+          if (buyNote) buyNote.style.display = "none";
+        } else {
+          var subject = encodeURIComponent("Purchase request: " + product.name);
+          var body = encodeURIComponent(
+            "Hi " + site.settings.site_name + ",\n\nI'd like to purchase \"" + product.name + "\" (" +
+            formatPrice(product.price) + ").\n\nPlease send payment instructions.\n"
+          );
+          buyBtn.href = "mailto:hello@gridlab.co?subject=" + subject + "&body=" + body;
+        }
       }
 
       renderProductGrid(site, "related-grid", data.related);
