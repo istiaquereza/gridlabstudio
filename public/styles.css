@@ -63,20 +63,30 @@ img { max-width: 100%; display: block; }
   margin-bottom: 32px;
 }
 
-.sidebar-top .btn {
-  width: auto;
-  height: 28px;
-  padding: 0 12px;
-  background: var(--surface);
-  color: var(--text);
-  border: none;
-  font-size: 13px;
+.sidebar-clock {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
   font-weight: 500;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-.sidebar-top .btn:hover {
-  background: rgba(0, 0, 0, 0.08);
-  border-color: transparent;
+.sidebar-clock .clock-time {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.sidebar-clock .clock-icon {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.sidebar-clock .clock-city {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .logo {

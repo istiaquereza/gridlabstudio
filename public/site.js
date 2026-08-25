@@ -135,7 +135,7 @@ function renderShell(site) {
       '<a href="index.html" class="logo" aria-label="' + settings.site_name + ' Home">' +
       '<span class="logo-mark" aria-hidden="true">' + logoHTML + "</span>" +
       "</a>" +
-      '<button class="btn" data-login>Log in</button>' +
+      '<div class="sidebar-clock" id="sidebar-clock"></div>' +
       "</div>" +
       '<nav class="sidebar-nav">' +
       '<div class="nav-group"><h4>Browse</h4>' + feedNavHTML() + "</div>" +
@@ -153,7 +153,7 @@ function renderShell(site) {
   }
 
   initMobileNav();
-  initLoginButtons();
+  initSidebarClock();
 }
 
 function showToast(message) {
@@ -190,13 +190,42 @@ function initMobileNav() {
   });
 }
 
-function initLoginButtons() {
-  document.querySelectorAll("[data-login]").forEach(function (btn) {
-    btn.addEventListener("click", function (e) {
-      e.preventDefault();
-      showToast("Accounts are coming soon — check back shortly.");
-    });
-  });
+var CLOCK_ZONES = [
+  { city: "Toronto", tz: "America/Toronto" },
+  { city: "New York", tz: "America/New_York" }
+];
+
+function zoneTimeInfo(tz) {
+  var now = new Date();
+  var display = new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true })
+    .format(now)
+    .replace(/\s?[AP]M$/i, "");
+  var hour24 = parseInt(
+    new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", hourCycle: "h23" }).format(now),
+    10
+  );
+  var isNight = hour24 < 6 || hour24 >= 18;
+  return { time: display, isNight: isNight };
+}
+
+function initSidebarClock() {
+  var el = document.getElementById("sidebar-clock");
+  if (!el) return;
+
+  var i = 0;
+  function tick() {
+    var zone = CLOCK_ZONES[i % CLOCK_ZONES.length];
+    i++;
+    var info = zoneTimeInfo(zone.tz);
+    el.innerHTML =
+      '<span class="clock-time">' + info.time + "</span>" +
+      '<span class="clock-icon">' + (info.isNight ? "&#127769;" : "&#9728;&#65039;") + "</span>" +
+      '<span class="clock-city">' + zone.city + "</span>";
+  }
+
+  tick();
+  clearInterval(initSidebarClock._t);
+  initSidebarClock._t = setInterval(tick, 5000);
 }
 
 function formatPrice(n) {
