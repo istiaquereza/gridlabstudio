@@ -285,14 +285,18 @@ function initHomeGrid(site) {
 
   var pillRow = document.getElementById("pill-row");
   var params = new URLSearchParams(window.location.search);
-  // A content-type filter can still arrive via the sidebar's Product links
-  // (index.html?type=slug) — honored for fetching, but the pill row itself
-  // is category-based now, so no pill lights up for a type-only filter.
+  // A content-type filter arrives via the sidebar's Product links
+  // (index.html?type=slug). Feed (type=all) shows every category as a
+  // pill; a Product link scopes the pills to just that type's categories.
   var activeType = params.get("type") || "all";
   var activeCategory = params.get("category") || params.get("cat") || "all";
 
   if (pillRow) {
-    var pills = [{ slug: "all", name: "All" }].concat(site.categories);
+    var scopedCategories = activeType !== "all"
+      ? site.categories.filter(function (c) { return c.content_type_slug === activeType; })
+      : site.categories;
+    var allLabel = activeType !== "all" ? "All " + typeLabel(site, activeType) : "All";
+    var pills = [{ slug: "all", name: allLabel }].concat(scopedCategories);
     pillRow.innerHTML = pills
       .map(function (c) {
         return (
@@ -323,11 +327,9 @@ function initHomeGrid(site) {
         pillRow.querySelectorAll(".pill").forEach(function (p) { p.classList.remove("active"); });
         pill.classList.add("active");
         activeCategory = pill.dataset.cat;
-        activeType = "all";
         var url = new URL(window.location.href);
         if (activeCategory === "all") url.searchParams.delete("category");
         else url.searchParams.set("category", activeCategory);
-        url.searchParams.delete("type");
         url.searchParams.delete("cat");
         history.replaceState(null, "", url);
         load();
